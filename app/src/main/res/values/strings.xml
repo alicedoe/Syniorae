@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SyniOrae</string>
+
+    <!-- Navigation -->
+    <string name="settings">Paramètres</string>
+    <string name="configuration">Configuration</string>
+    <string name="back">Retour</string>
+
+    <!-- Page d'accueil -->
+    <string name="upcoming_events">Événements à venir</string>
+    <string name="no_events_today">Aucun événement de prévu</string>
+    <string name="all_day">Toute la journée</string>
+
+    <!-- Configuration des widgets -->
+    <string name="widgets_configuration">Configuration des widgets</string>
+    <string name="google_calendar">Calendrier Google</string>
+    <string name="widget_enabled">Widget activé</string>
+    <string name="widget_disabled">Widget désactivé</string>
+    <string name="last_sync">Dernière synchronisation</string>
+    <string name="sync_now">Synchroniser maintenant</string>
+    <string name="configure_widget">Configurer</string>
+
+    <!-- Messages d'erreur -->
+    <string name="error_generic">Une erreur est survenue</string>
+    <string name="error_network">Erreur de connexion réseau</string>
+    <string name="error_permission_denied">Accès refusé</string>
+
+    <!-- Messages de succès -->
+    <string name="sync_success">Synchronisation réussie</string>
+    <string name="widget_activated">Widget activé avec succès</string>
+    <string name="widget_deactivated">Widget désactivé</string>
+
+    <!-- Jours de la semaine -->
+    <string name="monday">Lundi</string>
+    <string name="tuesday">Mardi</string>
+    <string name="wednesday">Mercredi</string>
+    <string name="thursday">Jeudi</string>
+    <string name="friday">Vendredi</string>
+    <string name="saturday">Samedi</string>
+    <string name="sunday">Dimanche</string>
+
+    <!-- Mois -->
+    <string name="january">janvier</string>
+    <string name="february">février</string>
+    <string name="march">mars</string>
+    <string name="april">avril</string>
+    <string name="may">mai</string>
+    <string name="june">juin</string>
+    <string name="july">juillet</string>
+    <string name="august">août</string>
+    <string name="september">septembre</string>
+    <string name="october">octobre</string>
+    <string name="november">novembre</string>
+    <string name="december">décembre</string>
+</resources>
