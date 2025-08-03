@@ -14,10 +14,6 @@ import com.syniorae.databinding.FragmentHomeBinding
 import com.syniorae.presentation.common.NavigationEvent
 import kotlinx.coroutines.launch
 
-/**
- * Fragment de la page d'accueil (Page 1)
- * Affiche la date du jour et les événements du calendrier
- */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
