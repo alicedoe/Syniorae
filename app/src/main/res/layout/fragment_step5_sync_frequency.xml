@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/padding_large">
+
+    <!-- Titre de l'étape -->
+    <TextView
+        android:id="@+id/stepTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:textSize="@dimen/text_size_extra_large"
+        android:textStyle="bold"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Étape 5/6 - Fréquence de synchronisation" />
+
+    <!-- Description -->
+    <TextView
+        android:id="@+id/stepDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textSize="@dimen/text_size_medium"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stepTitle"
+        tools:text="À quelle fréquence voulez-vous synchroniser votre calendrier ?" />
+
+    <!-- Options de fréquence -->
+    <LinearLayout
+        android:id="@+id/frequencyOptions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stepDescription">
+
+        <Button
+            android:id="@+id/frequency1Hour"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Toutes les heures"
+            android:textSize="@dimen/text_size_medium"
+            android:minHeight="@dimen/touch_target_large"
+            android:padding="@dimen/padding_medium" />
+
+        <Button
+            android:id="@+id/frequency2Hours"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Toutes les 2 heures"
+            android:textSize="@dimen/text_size_medium"
+            android:minHeight="@dimen/touch_target_large"
+            android:padding="@dimen/padding_medium" />
+
+        <Button
+            android:id="@+id/frequency4Hours"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Toutes les 4 heures (recommandé)"
+            android:textSize="@dimen/text_size_medium"
+            android:minHeight="@dimen/touch_target_large"
+            android:padding="@dimen/padding_medium" />
+
+        <Button
+            android:id="@+id/frequency8Hours"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Toutes les 8 heures"
+            android:textSize="@dimen/text_size_medium"
+            android:minHeight="@dimen/touch_target_large"
+            android:padding="@dimen/padding_medium" />
+
+        <Button
+            android:id="@+id/frequency24Hours"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Une fois par jour"
+            android:textSize="@dimen/text_size_medium"
+            android:minHeight="@dimen/touch_target_large"
+            android:padding="@dimen/padding_medium" />
+
+    </LinearLayout>
+
+    <!-- Informations sur l'impact -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/impactCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:cardCornerRadius="@dimen/card_corner_radius"
+        app:cardElevation="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/frequencyOptions">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/padding_medium">
+
+            <TextView
+                android:id="@+id/batteryImpact"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_size_medium"
+                android:layout_marginBottom="4dp"
+                tools:text="🔋 Impact batterie : Faible" />
+
+            <TextView
+                android:id="@+id/dataUsage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_size_medium"
+                android:layout_marginBottom="8dp"
+                tools:text="📊 Consommation data : Faible" />
+
+            <TextView
+                android:id="@+id/recommendation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="italic"
+                android:textColor="@color/design_default_color_primary"
+                tools:text="💡 Recommandé pour un usage normal" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Boutons de navigation -->
+    <LinearLayout
+        android:id="@+id/navigationButtons"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="space_between"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/previousButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Précédent"
+            android:textSize="@dimen/text_size_medium"
+            android:minWidth="120dp"
+            android:minHeight="@dimen/touch_target_large" />
+
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Suivant"
+            android:textSize="@dimen/text_size_medium"
+            android:minWidth="120dp"
+            android:minHeight="@dimen/touch_target_large" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

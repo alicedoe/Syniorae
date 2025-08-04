@@ -6,25 +6,30 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentHomeBinding
-import kotlinx.coroutines.*
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
+import com.syniorae.presentation.common.NavigationEvent
+import com.syniorae.presentation.fragments.home.adapters.TodayEventsAdapter
+import kotlinx.coroutines.launch
 
 /**
- * Fragment pour la page d'accueil (Page 1)
- * Version simple avec appui long basique
+ * Fragment de la page d'accueil (Page 1)
+ * Version simplifiée sans dépendances externes
  */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private var longPressJob: Job? = null
-    private var isLongPressing = false
+    // Adaptateurs
+    private lateinit var todayEventsAdapter: TodayEventsAdapter
+
+    // ViewModel sans factory (constructeur par défaut)
+    private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,7 +44,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupUI()
-        updateCurrentDate()
+        observeViewModel()
     }
 
     /**
@@ -47,23 +52,18 @@ class HomeFragment : Fragment() {
      */
     private fun setupUI() {
         setupSettingsIcon()
-        setupSwipeRefresh()
-
-        // Message par défaut dans la colonne droite
-        binding.rightColumnMessage.visibility = View.VISIBLE
-        binding.rightColumnMessage.text = "Activez le widget calendrier pour voir vos événements"
+        setupAdapters()
     }
 
     /**
-     * Met à jour la date actuelle
+     * Configure les adaptateurs RecyclerView
      */
-    private fun updateCurrentDate() {
-        val now = LocalDateTime.now()
-
-        binding.dayOfWeek.text = now.format(DateTimeFormatter.ofPattern("EEEE", Locale.FRENCH))
-            .replaceFirstChar { it.uppercase() }
-        binding.dayOfMonth.text = now.format(DateTimeFormatter.ofPattern("d"))
-        binding.monthYear.text = now.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRENCH))
+    private fun setupAdapters() {
+        todayEventsAdapter = TodayEventsAdapter()
+        binding.todayEventsList.apply {
+            adapter = todayEventsAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
     }
 
     /**
@@ -73,11 +73,11 @@ class HomeFragment : Fragment() {
         binding.settingsIcon.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    startLongPress()
+                    viewModel.onSettingsIconPressed()
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    stopLongPress()
+                    viewModel.onSettingsIconReleased()
                     true
                 }
                 else -> false
@@ -86,84 +86,134 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Démarre l'appui long
+     * Observe les changements du ViewModel
      */
-    private fun startLongPress() {
-        if (isLongPressing) return
-
-        isLongPressing = true
-        longPressJob = CoroutineScope(Dispatchers.Main).launch {
-            var progress = 0f
-
-            while (progress < 1f && isLongPressing) {
-                progress += 0.02f // 50 étapes pour 1 seconde
-
-                // Effet visuel
-                binding.settingsIcon.alpha = 0.3f + (progress * 0.7f)
-                val scale = 1f + (progress * 0.1f)
-                binding.settingsIcon.scaleX = scale
-                binding.settingsIcon.scaleY = scale
-
-                delay(20) // 50 fps
-            }
-
-            if (isLongPressing) {
-                // Appui complet - naviguer vers la configuration
-                navigateToConfiguration()
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            // État de la vue
+            viewModel.viewState.collect { state ->
+                updateUI(state)
             }
         }
-    }
 
-    /**
-     * Arrête l'appui long
-     */
-    private fun stopLongPress() {
-        isLongPressing = false
-        longPressJob?.cancel()
-
-        // Remettre l'icône normale
-        binding.settingsIcon.alpha = 1f
-        binding.settingsIcon.scaleX = 1f
-        binding.settingsIcon.scaleY = 1f
-    }
-
-    /**
-     * Navigue vers la page de configuration
-     */
-    private fun navigateToConfiguration() {
-        try {
-            findNavController().navigate(
-                com.syniorae.R.id.action_home_to_configuration
-            )
-        } catch (e: Exception) {
-            showMessage("Navigation vers configuration")
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Progression de l'appui long
+            viewModel.longPressProgress.collect { progress ->
+                updateLongPressProgress(progress)
+            }
         }
-    }
 
-    /**
-     * Configure le swipe refresh
-     */
-    private fun setupSwipeRefresh() {
-        binding.swipeRefresh.setOnRefreshListener {
-            // Simuler un refresh
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(1000)
-                binding.swipeRefresh.isRefreshing = false
-                updateCurrentDate()
-                showMessage("Données mises à jour")
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Navigation
+            viewModel.navigationEvent.collect { event ->
+                handleNavigationEvent(event)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Erreurs
+            viewModel.error.collect { error ->
+                showError(error)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Messages
+            viewModel.message.collect { message ->
+                showMessage(message)
             }
         }
     }
 
     /**
-     * Affiche un message
+     * Met à jour l'interface utilisateur selon l'état
+     */
+    private fun updateUI(state: HomeViewState) {
+        // Date
+        binding.dayOfWeek.text = state.dayOfWeek
+        binding.dayOfMonth.text = state.dayOfMonth
+        binding.monthYear.text = state.monthYear
+
+        // Colonne droite
+        if (state.hasCalendarWidget) {
+            if (state.hasTodayEvents()) {
+                // Afficher les événements du jour
+                binding.rightColumnMessage.visibility = View.GONE
+                binding.todayEventsList.visibility = View.VISIBLE
+                todayEventsAdapter.submitList(state.todayEvents)
+            } else {
+                // Afficher le message "Aucun événement"
+                binding.rightColumnMessage.visibility = View.VISIBLE
+                binding.todayEventsList.visibility = View.GONE
+                binding.rightColumnMessage.text = state.getRightColumnMessage()
+            }
+        } else {
+            // Pas de widget calendrier activé - colonnes vides
+            binding.rightColumnMessage.visibility = View.GONE
+            binding.todayEventsList.visibility = View.GONE
+        }
+
+        // Événements futurs
+        if (state.hasFutureEvents()) {
+            binding.futureEventsSection.visibility = View.VISIBLE
+            // TODO: Adapter pour afficher les événements futurs groupés
+        } else {
+            binding.futureEventsSection.visibility = View.GONE
+        }
+    }
+
+    /**
+     * Met à jour la progression de l'appui long
+     */
+    private fun updateLongPressProgress(progress: Float) {
+        if (progress > 0f) {
+            // Afficher et animer le cercle de progression
+            binding.progressCircle.visibility = View.VISIBLE
+            binding.progressCircle.setProgress(progress)
+
+            // Légère transparence de l'icône pendant l'appui
+            binding.settingsIcon.alpha = 0.7f
+        } else {
+            // Masquer le cercle et remettre l'icône normale
+            binding.progressCircle.visibility = View.INVISIBLE
+            binding.progressCircle.reset()
+            binding.settingsIcon.alpha = 1f
+        }
+    }
+
+    /**
+     * Gère les événements de navigation
+     */
+    private fun handleNavigationEvent(event: NavigationEvent) {
+        when (event) {
+            is NavigationEvent.NavigateToConfiguration -> {
+                findNavController().navigate(
+                    com.syniorae.R.id.action_home_to_configuration
+                )
+            }
+            else -> {
+                // Autres événements de navigation
+            }
+        }
+    }
+
+    /**
+     * Affiche un message d'erreur
+     */
+    private fun showError(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setAction("OK") { }
+            .show()
+    }
+
+    /**
+     * Affiche un message d'information
      */
     private fun showMessage(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
-        longPressJob?.cancel()
         super.onDestroyView()
         _binding = null
     }

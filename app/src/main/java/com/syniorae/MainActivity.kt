@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
+
+        // Pas de configuration ActionBar car on utilise NoActionBar theme
     }
 
     override fun onSupportNavigateUp(): Boolean {

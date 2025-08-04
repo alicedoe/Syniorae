@@ -2,103 +2,72 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/background_senior"
-    tools:context=".presentation.widgets.calendar.configuration.CalendarConfigurationActivity">
+    android:layout_height="match_parent">
 
-    <!-- En-tête avec titre et progression -->
+    <!-- Indicateur de progression en haut -->
     <LinearLayout
-        android:id="@+id/header"
+        android:id="@+id/progressIndicator"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/padding_large"
-        android:background="@color/primary_senior"
-        android:elevation="4dp"
+        android:orientation="horizontal"
+        android:padding="@dimen/padding_medium"
+        android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Titre principal -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Configuration Calendrier Google"
-            android:textSize="@dimen/text_size_extra_large"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:gravity="center"
-            android:layout_marginBottom="@dimen/spacing_medium" />
-
-        <!-- Indicateur d'étape -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <!-- Compteur d'étapes -->
-            <TextView
-                android:id="@+id/stepCounter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="1/6"
-                android:textSize="@dimen/text_size_medium"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
-                android:layout_marginEnd="@dimen/spacing_medium" />
-
-            <!-- Barre de progression par étapes -->
-            <ProgressBar
-                android:id="@+id/progressIndicator"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:max="6"
-                android:progress="1"
-                android:progressTint="@android:color/white"
-                android:progressBackgroundTint="@color/primary_senior_dark"
-                android:layout_marginEnd="@dimen/spacing_medium" />
-
-            <!-- Pourcentage global -->
-            <TextView
-                android:id="@+id/overallProgressText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="17%"
-                android:textSize="@dimen/text_size_small"
-                android:textColor="@android:color/white" />
-
-        </LinearLayout>
-
-        <!-- Barre de progression globale -->
-        <ProgressBar
-            android:id="@+id/overallProgress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
+        <View
+            android:id="@+id/step1Indicator"
+            android:layout_width="30dp"
             android:layout_height="4dp"
-            android:layout_marginTop="@dimen/spacing_small"
-            android:max="100"
-            android:progress="17"
-            android:progressTint="@color/secondary_senior"
-            android:progressBackgroundTint="@color/primary_senior_dark" />
+            android:layout_marginEnd="4dp"
+            android:background="@color/design_default_color_primary" />
+
+        <View
+            android:id="@+id/step2Indicator"
+            android:layout_width="30dp"
+            android:layout_height="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@android:color/darker_gray" />
+
+        <View
+            android:id="@+id/step3Indicator"
+            android:layout_width="30dp"
+            android:layout_height="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@android:color/darker_gray" />
+
+        <View
+            android:id="@+id/step4Indicator"
+            android:layout_width="30dp"
+            android:layout_height="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@android:color/darker_gray" />
+
+        <View
+            android:id="@+id/step5Indicator"
+            android:layout_width="30dp"
+            android:layout_height="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@android:color/darker_gray" />
+
+        <View
+            android:id="@+id/step6Indicator"
+            android:layout_width="30dp"
+            android:layout_height="4dp"
+            android:background="@android:color/darker_gray" />
 
     </LinearLayout>
 
-    <!-- Conteneur principal des fragments -->
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment_config"
-        android:name="androidx.navigation.fragment.NavHostFragment"
+    <!-- Container pour les fragments -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        app:defaultNavHost="true"
-        app:navGraph="@navigation/calendar_config_nav_graph" />
+        app:layout_constraintTop_toBottomOf="@id/progressIndicator" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

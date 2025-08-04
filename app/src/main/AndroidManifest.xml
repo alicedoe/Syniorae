@@ -14,9 +14,8 @@
         android:theme="@style/Theme.Syniorae"
         tools:targetApi="31">
 
-        <!-- Activité principale -->
         <activity
-            android:name=".presentation.activities.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Syniorae">
             <intent-filter>
@@ -24,15 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Activité tunnel de configuration calendrier -->
-        <activity
-            android:name=".presentation.widgets.calendar.configuration.CalendarConfigurationActivity"
-            android:theme="@style/Theme.Syniorae"
-            android:parentActivityName=".presentation.activities.MainActivity"
-            android:screenOrientation="portrait"
-            android:exported="false" />
-
     </application>
 
 </manifest>

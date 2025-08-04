@@ -14,34 +14,29 @@
         android:padding="@dimen/padding_large">
 
         <!-- En-tête avec icône paramètre -->
-        <FrameLayout
-            android:id="@+id/settingsIconContainer"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+        <ImageView
+            android:id="@+id/settingsIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginTop="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/settings"
+            android:padding="8dp"
+            android:src="@drawable/ic_settings_24"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/settingsIcon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="center"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/settings"
-                android:padding="8dp"
-                android:src="@drawable/ic_settings_24" />
-
-            <!-- Overlay de progression pour l'appui long -->
-            <com.syniorae.presentation.common.views.CircularProgressOverlay
-                android:id="@+id/progressOverlay"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_gravity="center"
-                android:visibility="gone" />
-
-        </FrameLayout>
+        <!-- Cercle de progression au centre de l'écran -->
+        <com.syniorae.presentation.common.views.ProgressCircleView
+            android:id="@+id/progressCircle"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <!-- Contenu principal en deux colonnes -->
         <LinearLayout
@@ -53,7 +48,7 @@
             android:weightSum="2"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/settingsIconContainer">
+            app:layout_constraintTop_toBottomOf="@id/settingsIcon">
 
             <!-- Colonne gauche : Date du jour -->
             <LinearLayout
@@ -72,7 +67,6 @@
                     android:textAlignment="center"
                     android:textSize="@dimen/text_size_extra_large"
                     android:textStyle="bold"
-                    android:textColor="@color/text_primary_senior"
                     tools:text="Dimanche" />
 
                 <TextView
@@ -83,7 +77,6 @@
                     android:textAlignment="center"
                     android:textSize="@dimen/text_size_huge"
                     android:textStyle="bold"
-                    android:textColor="@color/primary_senior"
                     tools:text="3" />
 
                 <TextView
@@ -93,7 +86,6 @@
                     android:layout_marginTop="8dp"
                     android:textAlignment="center"
                     android:textSize="@dimen/text_size_large"
-                    android:textColor="@color/text_secondary_senior"
                     tools:text="août 2025" />
 
             </LinearLayout>
@@ -114,7 +106,6 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:textSize="@dimen/text_size_medium"
-                    android:textColor="@color/text_secondary_senior"
                     android:visibility="gone"
                     tools:text="Aucun événement de prévu"
                     tools:visibility="visible" />
@@ -154,8 +145,7 @@
                 android:layout_marginBottom="16dp"
                 android:text="@string/upcoming_events"
                 android:textSize="@dimen/text_size_large"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary_senior" />
+                android:textStyle="bold" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/futureEventsList"
