@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/padding_medium"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- En-tête de date (affiché seulement pour le premier événement du jour) -->
+    <TextView
+        android:id="@+id/dateHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_medium"
+        android:textSize="@dimen/text_size_large"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        android:visibility="gone"
+        tools:text="Lundi 4 août 2025"
+        tools:visibility="visible" />
+
+    <!-- Contenu de l'événement -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Heure de l'événement -->
+        <TextView
+            android:id="@+id/eventTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/spacing_large"
+            android:minWidth="80dp"
+            android:textSize="@dimen/text_size_medium"
+            android:textStyle="bold"
+            tools:text="10h00" />
+
+        <!-- Titre de l'événement -->
+        <TextView
+            android:id="@+id/eventTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="@dimen/text_size_medium"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="Rendez-vous médecin - Consultation de contrôle" />
+
+        <!-- Icône de l'événement (optionnelle, pour les futures versions) -->
+        <ImageView
+            android:id="@+id/eventIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="@dimen/spacing_medium"
+            android:visibility="gone"
+            android:contentDescription="@string/event_icon"
+            tools:src="@drawable/ic_event_24"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+    <!-- Ligne de séparation -->
+    <View
+        android:id="@+id/separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="@dimen/spacing_medium"
+        android:background="?attr/colorOutline"
+        android:alpha="0.3" />
+
+</LinearLayout>

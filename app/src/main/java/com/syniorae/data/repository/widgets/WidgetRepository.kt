@@ -115,9 +115,9 @@ class WidgetRepository(
      */
     private fun loadWidgetsFromPrefs(): List<Widget> {
         return try {
-            Widget.getAvailableWidgets()
+            Widget.Companion.getAvailableWidgets()
         } catch (e: Exception) {
-            Widget.getAvailableWidgets()
+            Widget.Companion.getAvailableWidgets()
         }
     }
 

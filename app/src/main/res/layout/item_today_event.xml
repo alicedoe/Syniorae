@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/padding_small"
+    android:gravity="center_vertical">
+
+    <!-- Indicateur d'événement en cours -->
+    <View
+        android:id="@+id/eventIndicator"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:layout_marginEnd="@dimen/spacing_medium"
+        android:background="@drawable/circle_green"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Contenu de l'événement -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/eventTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/text_size_medium"
+            android:textStyle="bold"
+            tools:text="14h30" />
+
+        <TextView
+            android:id="@+id/eventTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="@dimen/text_size_medium"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="Rendez-vous médecin" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -9,15 +9,20 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentHomeBinding
 import com.syniorae.presentation.common.NavigationEvent
+import com.syniorae.presentation.fragments.home.adapters.TodayEventsAdapter
 import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+
+    // Adaptateurs
+    private lateinit var todayEventsAdapter: TodayEventsAdapter
 
     // TODO: Remplacer par l'injection de dépendances (Hilt) plus tard
     private val viewModel: HomeViewModel by viewModels()
