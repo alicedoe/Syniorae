@@ -6,7 +6,6 @@ import com.syniorae.domain.usecases.navigation.HandleLongPressUseCase
 import com.syniorae.domain.usecases.navigation.NavigationTarget
 import com.syniorae.domain.usecases.navigation.NavigateToPageUseCase
 import com.syniorae.domain.usecases.navigation.NavigationResult
-import com.syniorae.domain.usecases.user.GetUserRoleUseCase
 import com.syniorae.domain.usecases.widgets.common.GetAllWidgetsUseCase
 import com.syniorae.presentation.common.BaseViewModel
 import com.syniorae.presentation.common.NavigationEvent
@@ -20,7 +19,6 @@ import java.util.*
  * ViewModel pour la page d'accueil (Page 1)
  */
 class HomeViewModel(
-    private val getUserRoleUseCase: GetUserRoleUseCase,
     private val getAllWidgetsUseCase: GetAllWidgetsUseCase,
     private val handleLongPressUseCase: HandleLongPressUseCase,
     private val navigateToPageUseCase: NavigateToPageUseCase
@@ -42,7 +40,6 @@ class HomeViewModel(
 
     init {
         loadInitialData()
-        observeUserChanges()
         observeWidgetChanges()
     }
 
@@ -89,19 +86,6 @@ class HomeViewModel(
             todayEvents = todayEvents,
             futureEvents = futureEvents
         )
-    }
-
-    /**
-     * Observe les changements d'utilisateur
-     */
-    private fun observeUserChanges() {
-        viewModelScope.launch {
-            getUserRoleUseCase.observeUser().collect { user ->
-                _viewState.value = _viewState.value.copy(
-                    canAccessConfiguration = user.canAccessConfiguration()
-                )
-            }
-        }
     }
 
     /**
@@ -182,8 +166,7 @@ data class HomeViewState(
     val monthYear: String = "",
     val hasCalendarWidget: Boolean = false,
     val todayEvents: List<CalendarEvent> = emptyList(),
-    val futureEvents: List<CalendarEvent> = emptyList(),
-    val canAccessConfiguration: Boolean = false
+    val futureEvents: List<CalendarEvent> = emptyList()
 ) {
 
     /**

@@ -56,18 +56,12 @@ class ToggleWidgetUseCase(
                 // Widget actif → le désactiver
                 widgetRepository.disableWidget(widgetType)
             } else {
-                // Widget inactif → vérifier s'il est configuré
-                if (widget.isConfigured) {
-                    // Déjà configuré → l'activer directement
-                    widgetRepository.enableWidget(widgetType)
-                } else {
-                    // Pas configuré → lancer la configuration
-                    widgetRepository.setWidgetConfiguring(widgetType)
-                }
+                // Widget inactif → tenter de l'activer
+                widgetRepository.enableWidget(widgetType)
             }
 
             if (success) {
-                Result.success(widget.isActive())
+                Result.success(!widget.isActive()) // Retourne le nouvel état
             } else {
                 Result.failure(Exception("Impossible de changer l'état du widget"))
             }

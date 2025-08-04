@@ -11,12 +11,6 @@ object AppConstants {
 
     // Préférences
     const val SHARED_PREFS_NAME = "syniorae_prefs"
-    const val PREF_USER_ROLE = "user_role"
-    const val PREF_FIRST_LAUNCH = "first_launch"
-
-    // Rôles utilisateur
-    const val ROLE_USER = "user"
-    const val ROLE_CONFIGURATOR = "configurator"
 
     // Fichiers JSON
     const val JSON_CONFIG_SUFFIX = "_config.json"
@@ -26,8 +20,8 @@ object AppConstants {
     // Widgets
     const val WIDGET_CALENDAR = "calendar"
 
-    // Navigation
-    const val LONG_PRESS_DURATION = 1000L // 1 seconde
+    // Navigation - Durée de l'appui long en millisecondes (1 seconde selon le cahier des charges)
+    const val LONG_PRESS_DURATION = 1000L
 
     // Synchronisation
     const val DEFAULT_SYNC_FREQUENCY_HOURS = 4

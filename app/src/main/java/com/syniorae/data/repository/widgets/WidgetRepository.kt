@@ -53,14 +53,21 @@ class WidgetRepository(
      * Active un widget
      */
     suspend fun enableWidget(type: WidgetType): Boolean {
-        return updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
+        // Vérifier si le widget a sa configuration
+        val hasConfig = jsonFileManager.hasConfigurationFiles(type)
+        return if (hasConfig) {
+            updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
+        } else {
+            // Pas de configuration → passer en mode configuration
+            updateWidgetStatus(type, WidgetStatus.CONFIGURING, isConfigured = false)
+        }
     }
 
     /**
      * Désactive un widget
      */
     suspend fun disableWidget(type: WidgetType): Boolean {
-        return updateWidgetStatus(type, WidgetStatus.OFF, isConfigured = false)
+        return updateWidgetStatus(type, WidgetStatus.OFF)
     }
 
     /**
@@ -68,6 +75,20 @@ class WidgetRepository(
      */
     suspend fun setWidgetConfiguring(type: WidgetType): Boolean {
         return updateWidgetStatus(type, WidgetStatus.CONFIGURING, isConfigured = false)
+    }
+
+    /**
+     * Marque un widget comme configuré et l'active
+     */
+    suspend fun markWidgetConfigured(type: WidgetType): Boolean {
+        return updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
+    }
+
+    /**
+     * Met un widget en erreur
+     */
+    suspend fun setWidgetError(type: WidgetType, errorMessage: String): Boolean {
+        return updateWidgetStatus(type, WidgetStatus.ERROR, errorMessage = errorMessage)
     }
 
     /**
@@ -115,9 +136,32 @@ class WidgetRepository(
      */
     private fun loadWidgetsFromPrefs(): List<Widget> {
         return try {
-            Widget.Companion.getAvailableWidgets()
+            val availableWidgets = Widget.getAvailableWidgets().toMutableList()
+
+            // Charge les états sauvegardés
+            availableWidgets.forEachIndexed { index, widget ->
+                val keyPrefix = "widget_${widget.type.name.lowercase()}"
+                val statusName = sharedPrefs.getString("${keyPrefix}_status", WidgetStatus.OFF.name)
+                val isConfigured = sharedPrefs.getBoolean("${keyPrefix}_configured", false)
+                val lastUpdate = sharedPrefs.getLong("${keyPrefix}_last_update", 0L)
+                val errorMessage = sharedPrefs.getString("${keyPrefix}_error", null)
+
+                try {
+                    val status = WidgetStatus.valueOf(statusName ?: WidgetStatus.OFF.name)
+                    availableWidgets[index] = widget.copy(
+                        status = status,
+                        isConfigured = isConfigured,
+                        lastUpdate = lastUpdate,
+                        errorMessage = errorMessage
+                    )
+                } catch (e: Exception) {
+                    // Si erreur, garde les valeurs par défaut
+                }
+            }
+
+            availableWidgets
         } catch (e: Exception) {
-            Widget.Companion.getAvailableWidgets()
+            Widget.getAvailableWidgets()
         }
     }
 

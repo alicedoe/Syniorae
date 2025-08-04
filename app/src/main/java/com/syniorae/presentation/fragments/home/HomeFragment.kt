@@ -6,26 +6,23 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentHomeBinding
-import com.syniorae.presentation.common.NavigationEvent
-import com.syniorae.presentation.fragments.home.adapters.TodayEventsAdapter
-import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 
+/**
+ * Fragment de la page d'accueil (Page 1)
+ * Version temporaire sans ViewModel complet en attendant la mise en place de l'injection de dépendances
+ */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    // Adaptateurs
-    private lateinit var todayEventsAdapter: TodayEventsAdapter
-
-    // TODO: Remplacer par l'injection de dépendances (Hilt) plus tard
-    private val viewModel: HomeViewModel by viewModels()
+    private var isLongPressing = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,7 +37,8 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupUI()
-        observeViewModel()
+        updateCurrentDate()
+        updateUI()
     }
 
     /**
@@ -57,11 +55,11 @@ class HomeFragment : Fragment() {
         binding.settingsIcon.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    viewModel.onSettingsIconPressed()
+                    onSettingsIconPressed()
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    viewModel.onSettingsIconReleased()
+                    onSettingsIconReleased()
                     true
                 }
                 else -> false
@@ -70,66 +68,40 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Observe les changements du ViewModel
+     * Met à jour la date actuelle
      */
-    private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            // État de la vue
-            viewModel.viewState.collect { state ->
-                updateUI(state)
-            }
-        }
+    private fun updateCurrentDate() {
+        val now = LocalDateTime.now()
+        val dayOfWeek = now.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))
+        val dayOfMonth = now.format(DateTimeFormatter.ofPattern("d"))
+        val month = now.format(DateTimeFormatter.ofPattern("MMMM"))
+        val year = now.format(DateTimeFormatter.ofPattern("yyyy"))
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Progression de l'appui long
-            viewModel.longPressProgress.collect { progress ->
-                updateLongPressProgress(progress)
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Navigation
-            viewModel.navigationEvent.collect { event ->
-                handleNavigationEvent(event)
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Erreurs
-            viewModel.error.collect { error ->
-                showError(error)
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Messages
-            viewModel.message.collect { message ->
-                showMessage(message)
-            }
-        }
+        binding.dayOfWeek.text = dayOfWeek.replaceFirstChar { it.uppercase() }
+        binding.dayOfMonth.text = dayOfMonth
+        binding.monthYear.text = "$month $year"
     }
 
     /**
-     * Met à jour l'interface utilisateur selon l'état
+     * Met à jour l'interface utilisateur
      */
-    private fun updateUI(state: HomeViewState) {
-        // Date
-        binding.dayOfWeek.text = state.dayOfWeek
-        binding.dayOfMonth.text = state.dayOfMonth
-        binding.monthYear.text = state.monthYear
+    private fun updateUI() {
+        // Pour l'instant, pas de widget calendrier activé
+        val hasCalendarWidget = false
+        val hasTodayEvents = false
+        val hasFutureEvents = false
 
         // Colonne droite
-        if (state.hasCalendarWidget) {
-            if (state.hasTodayEvents()) {
+        if (hasCalendarWidget) {
+            if (hasTodayEvents) {
                 // Afficher les événements du jour
                 binding.rightColumnMessage.visibility = View.GONE
                 binding.todayEventsList.visibility = View.VISIBLE
-                // TODO: Adapter pour afficher la liste des événements
             } else {
                 // Afficher le message "Aucun événement"
                 binding.rightColumnMessage.visibility = View.VISIBLE
                 binding.todayEventsList.visibility = View.GONE
-                binding.rightColumnMessage.text = state.getRightColumnMessage()
+                binding.rightColumnMessage.text = "Aucun événement de prévu"
             }
         } else {
             // Pas de widget calendrier activé
@@ -138,38 +110,58 @@ class HomeFragment : Fragment() {
         }
 
         // Événements futurs
-        if (state.hasFutureEvents()) {
+        if (hasFutureEvents) {
             binding.futureEventsSection.visibility = View.VISIBLE
-            // TODO: Adapter pour afficher les événements futurs groupés
         } else {
             binding.futureEventsSection.visibility = View.GONE
         }
     }
 
     /**
-     * Met à jour la progression de l'appui long
+     * Gère le début de l'appui long sur l'icône paramètre
      */
-    private fun updateLongPressProgress(progress: Float) {
-        // TODO: Animer un cercle de progression autour de l'icône paramètre
-        val alpha = if (progress > 0) 0.3f + (progress * 0.7f) else 1f
-        binding.settingsIcon.alpha = alpha
+    private fun onSettingsIconPressed() {
+        if (isLongPressing) return
 
-        // TODO: Ajouter un cercle de progression visuel
+        isLongPressing = true
+
+        // TODO: Implémenter l'animation de progression
+        binding.settingsIcon.alpha = 0.5f
+
+        // Simulation d'un appui long de 1 seconde
+        binding.settingsIcon.postDelayed({
+            if (isLongPressing) {
+                navigateToConfiguration()
+            }
+            resetLongPress()
+        }, 1000L)
     }
 
     /**
-     * Gère les événements de navigation
+     * Gère le relâchement de l'appui long
      */
-    private fun handleNavigationEvent(event: NavigationEvent) {
-        when (event) {
-            is NavigationEvent.NavigateToConfiguration -> {
-                findNavController().navigate(
-                    com.syniorae.R.id.action_home_to_configuration
-                )
-            }
-            else -> {
-                // Autres événements de navigation
-            }
+    private fun onSettingsIconReleased() {
+        isLongPressing = false
+        resetLongPress()
+    }
+
+    /**
+     * Remet l'icône à son état normal
+     */
+    private fun resetLongPress() {
+        binding.settingsIcon.alpha = 1f
+    }
+
+    /**
+     * Navigue vers la page de configuration
+     */
+    private fun navigateToConfiguration() {
+        try {
+            findNavController().navigate(
+                com.syniorae.R.id.action_home_to_configuration
+            )
+        } catch (e: Exception) {
+            showError("Impossible d'accéder à la configuration")
         }
     }
 

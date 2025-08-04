@@ -14,18 +14,37 @@
         android:padding="@dimen/padding_large">
 
         <!-- En-tête avec icône paramètre -->
-        <ImageView
-            android:id="@+id/settingsIcon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+        <!-- En-tête avec icône paramètre et cercle de progression -->
+        <FrameLayout
+            android:id="@+id/settingsContainer"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_marginTop="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/settings"
-            android:padding="8dp"
-            android:src="@drawable/ic_settings_24"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <!-- Icône paramètre -->
+            <ImageView
+                android:id="@+id/settingsIcon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/settings"
+                android:padding="8dp"
+                android:src="@drawable/ic_settings_24" />
+
+            <!-- Cercle de progression (masqué par défaut) -->
+            <ImageView
+                android:id="@+id/progressCircle"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                android:src="@drawable/progress_circle"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
         <!-- Contenu principal en deux colonnes -->
         <LinearLayout

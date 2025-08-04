@@ -1,10 +1,9 @@
-package com.syniorae.presentation.activities
+package com.syniorae
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import com.syniorae.R
 import com.syniorae.databinding.ActivityMainBinding
 
 /**
