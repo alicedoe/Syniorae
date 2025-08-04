@@ -99,22 +99,27 @@
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
         android:orientation="horizontal"
-        android:gravity="space_between"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/weeksSeekBar">
+        app:layout_constraintTop_toBottomOf="@id/eventsSeekBar">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1"
+            android:text="10"
             android:textSize="@dimen/text_size_small"
             android:textColor="@android:color/darker_gray" />
 
+        <!-- Spacer flexible pour pousser le deuxième TextView à droite -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="12"
+            android:text="200"
             android:textSize="@dimen/text_size_small"
             android:textColor="@android:color/darker_gray" />
 
@@ -171,34 +176,34 @@
 
     <!-- Boutons de navigation -->
     <LinearLayout
-        android:id="@+id/navigationButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
         android:orientation="horizontal"
-        android:gravity="space_between"
-        android:layout_marginBottom="32dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/eventsSeekBar">
 
-        <Button
-            android:id="@+id/previousButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Précédent"
-            android:textSize="@dimen/text_size_medium"
-            android:minWidth="120dp"
-            android:minHeight="@dimen/touch_target_large" />
+            android:text="10"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@android:color/darker_gray" />
 
-        <Button
-            android:id="@+id/nextButton"
+        <!-- Spacer flexible pour pousser le deuxième TextView à droite -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Suivant"
-            android:textSize="@dimen/text_size_medium"
-            android:minWidth="120dp"
-            android:minHeight="@dimen/touch_target_large" />
+            android:text="200"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@android:color/darker_gray" />
 
     </LinearLayout>
 
