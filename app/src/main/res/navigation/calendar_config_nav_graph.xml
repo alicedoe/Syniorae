@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/calendar_config_nav_graph"
+    app:startDestination="@id/googleAuthFragment">
+
+    <!-- Étape 1: Connexion Google (seule étape pour l'instant) -->
+    <fragment
+        android:id="@+id/googleAuthFragment"
+        android:name="com.syniorae.presentation.widgets.calendar.configuration.steps.GoogleAuthFragment"
+        android:label="Connexion Google" />
+
+    <!--
+    TODO: Ajouter les autres étapes plus tard :
+
+    - calendarSelectionFragment (Étape 2)
+    - weeksParameterFragment (Étape 3)
+    - eventsParameterFragment (Étape 4)
+    - syncFrequencyFragment (Étape 5)
+    - iconAssociationsFragment (Étape 6)
+    - configurationCompletedFragment (Fin)
+    -->
+
+</navigation>

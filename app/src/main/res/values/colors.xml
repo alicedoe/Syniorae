@@ -2,4 +2,23 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Couleurs pour le cercle de progression -->
+    <color name="progress_color">#FF4CAF50</color>
+    <color name="progress_background">#FFE0E0E0</color>
+    <color name="progress_center">#FFFFFFFF</color>
+
+    <!-- Couleurs pour les statuts -->
+    <color name="status_success">#FF4CAF50</color>
+    <color name="status_error">#FFF44336</color>
+    <color name="status_warning">#FFFF9800</color>
+
+    <!-- Couleurs pour l'interface seniors -->
+    <color name="primary_senior">#FF2196F3</color>
+    <color name="primary_senior_dark">#FF1976D2</color>
+    <color name="secondary_senior">#FFFF9800</color>
+    <color name="background_senior">#FFFAFAFA</color>
+    <color name="surface_senior">#FFFFFFFF</color>
+    <color name="text_primary_senior">#FF212121</color>
+    <color name="text_secondary_senior">#FF757575</color>
 </resources>

@@ -9,19 +9,21 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentHomeBinding
+import kotlinx.coroutines.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 /**
- * Fragment de la page d'accueil (Page 1)
- * Version temporaire sans ViewModel complet en attendant la mise en place de l'injection de dépendances
+ * Fragment pour la page d'accueil (Page 1)
+ * Version simple avec appui long basique
  */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
+    private var longPressJob: Job? = null
     private var isLongPressing = false
 
     override fun onCreateView(
@@ -38,7 +40,6 @@ class HomeFragment : Fragment() {
 
         setupUI()
         updateCurrentDate()
-        updateUI()
     }
 
     /**
@@ -46,6 +47,23 @@ class HomeFragment : Fragment() {
      */
     private fun setupUI() {
         setupSettingsIcon()
+        setupSwipeRefresh()
+
+        // Message par défaut dans la colonne droite
+        binding.rightColumnMessage.visibility = View.VISIBLE
+        binding.rightColumnMessage.text = "Activez le widget calendrier pour voir vos événements"
+    }
+
+    /**
+     * Met à jour la date actuelle
+     */
+    private fun updateCurrentDate() {
+        val now = LocalDateTime.now()
+
+        binding.dayOfWeek.text = now.format(DateTimeFormatter.ofPattern("EEEE", Locale.FRENCH))
+            .replaceFirstChar { it.uppercase() }
+        binding.dayOfMonth.text = now.format(DateTimeFormatter.ofPattern("d"))
+        binding.monthYear.text = now.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRENCH))
     }
 
     /**
@@ -55,11 +73,11 @@ class HomeFragment : Fragment() {
         binding.settingsIcon.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    onSettingsIconPressed()
+                    startLongPress()
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    onSettingsIconReleased()
+                    stopLongPress()
                     true
                 }
                 else -> false
@@ -68,88 +86,45 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Met à jour la date actuelle
+     * Démarre l'appui long
      */
-    private fun updateCurrentDate() {
-        val now = LocalDateTime.now()
-        val dayOfWeek = now.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))
-        val dayOfMonth = now.format(DateTimeFormatter.ofPattern("d"))
-        val month = now.format(DateTimeFormatter.ofPattern("MMMM"))
-        val year = now.format(DateTimeFormatter.ofPattern("yyyy"))
-
-        binding.dayOfWeek.text = dayOfWeek.replaceFirstChar { it.uppercase() }
-        binding.dayOfMonth.text = dayOfMonth
-        binding.monthYear.text = "$month $year"
-    }
-
-    /**
-     * Met à jour l'interface utilisateur
-     */
-    private fun updateUI() {
-        // Pour l'instant, pas de widget calendrier activé
-        val hasCalendarWidget = false
-        val hasTodayEvents = false
-        val hasFutureEvents = false
-
-        // Colonne droite
-        if (hasCalendarWidget) {
-            if (hasTodayEvents) {
-                // Afficher les événements du jour
-                binding.rightColumnMessage.visibility = View.GONE
-                binding.todayEventsList.visibility = View.VISIBLE
-            } else {
-                // Afficher le message "Aucun événement"
-                binding.rightColumnMessage.visibility = View.VISIBLE
-                binding.todayEventsList.visibility = View.GONE
-                binding.rightColumnMessage.text = "Aucun événement de prévu"
-            }
-        } else {
-            // Pas de widget calendrier activé
-            binding.rightColumnMessage.visibility = View.GONE
-            binding.todayEventsList.visibility = View.GONE
-        }
-
-        // Événements futurs
-        if (hasFutureEvents) {
-            binding.futureEventsSection.visibility = View.VISIBLE
-        } else {
-            binding.futureEventsSection.visibility = View.GONE
-        }
-    }
-
-    /**
-     * Gère le début de l'appui long sur l'icône paramètre
-     */
-    private fun onSettingsIconPressed() {
+    private fun startLongPress() {
         if (isLongPressing) return
 
         isLongPressing = true
+        longPressJob = CoroutineScope(Dispatchers.Main).launch {
+            var progress = 0f
 
-        // TODO: Implémenter l'animation de progression
-        binding.settingsIcon.alpha = 0.5f
+            while (progress < 1f && isLongPressing) {
+                progress += 0.02f // 50 étapes pour 1 seconde
 
-        // Simulation d'un appui long de 1 seconde
-        binding.settingsIcon.postDelayed({
+                // Effet visuel
+                binding.settingsIcon.alpha = 0.3f + (progress * 0.7f)
+                val scale = 1f + (progress * 0.1f)
+                binding.settingsIcon.scaleX = scale
+                binding.settingsIcon.scaleY = scale
+
+                delay(20) // 50 fps
+            }
+
             if (isLongPressing) {
+                // Appui complet - naviguer vers la configuration
                 navigateToConfiguration()
             }
-            resetLongPress()
-        }, 1000L)
+        }
     }
 
     /**
-     * Gère le relâchement de l'appui long
+     * Arrête l'appui long
      */
-    private fun onSettingsIconReleased() {
+    private fun stopLongPress() {
         isLongPressing = false
-        resetLongPress()
-    }
+        longPressJob?.cancel()
 
-    /**
-     * Remet l'icône à son état normal
-     */
-    private fun resetLongPress() {
+        // Remettre l'icône normale
         binding.settingsIcon.alpha = 1f
+        binding.settingsIcon.scaleX = 1f
+        binding.settingsIcon.scaleY = 1f
     }
 
     /**
@@ -161,27 +136,34 @@ class HomeFragment : Fragment() {
                 com.syniorae.R.id.action_home_to_configuration
             )
         } catch (e: Exception) {
-            showError("Impossible d'accéder à la configuration")
+            showMessage("Navigation vers configuration")
         }
     }
 
     /**
-     * Affiche un message d'erreur
+     * Configure le swipe refresh
      */
-    private fun showError(message: String) {
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
-            .setAction("OK") { }
-            .show()
+    private fun setupSwipeRefresh() {
+        binding.swipeRefresh.setOnRefreshListener {
+            // Simuler un refresh
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(1000)
+                binding.swipeRefresh.isRefreshing = false
+                updateCurrentDate()
+                showMessage("Données mises à jour")
+            }
+        }
     }
 
     /**
-     * Affiche un message d'information
+     * Affiche un message
      */
     private fun showMessage(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
+        longPressJob?.cancel()
         super.onDestroyView()
         _binding = null
     }

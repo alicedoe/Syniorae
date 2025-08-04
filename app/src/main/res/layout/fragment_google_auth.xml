@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/padding_large"
+    tools:context=".presentation.widgets.calendar.configuration.steps.GoogleAuthFragment">
+
+    <!-- En-tête de l'étape -->
+    <TextView
+        android:id="@+id/stepTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_medium"
+        android:text="Étape 1/6 - Connexion Google"
+        android:textSize="@dimen/text_size_large"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary_senior"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Description de l'étape -->
+    <TextView
+        android:id="@+id/stepDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_large"
+        android:layout_marginBottom="@dimen/spacing_extra_large"
+        android:text="Connectez votre compte Google pour accéder à vos calendriers."
+        android:textSize="@dimen/text_size_medium"
+        android:textColor="@color/text_secondary_senior"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stepTitle" />
+
+    <!-- Card principale -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/mainCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_large"
+        app:cardCornerRadius="@dimen/card_corner_radius"
+        app:cardElevation="@dimen/card_elevation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stepDescription">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/padding_large">
+
+            <!-- Bouton de connexion Google -->
+            <Button
+                android:id="@+id/connectGoogleButton"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/touch_target_large"
+                android:layout_marginBottom="@dimen/spacing_medium"
+                android:text="Connecter mon compte Google"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                style="@style/Widget.Material3.Button" />
+
+            <!-- Barre de progression -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="@dimen/spacing_medium"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Statut de connexion -->
+            <TextView
+                android:id="@+id/connectionStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_medium"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:text="✓ Connecté en tant que utilisateur@gmail.com"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Section permissions (visible après connexion) -->
+    <LinearLayout
+        android:id="@+id/permissionsSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_large"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/mainCard"
+        tools:visibility="visible">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_medium"
+            android:text="Permissions accordées :"
+            android:textSize="@dimen/text_size_medium"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary_senior" />
+
+        <TextView
+            android:id="@+id/permissionsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/text_size_medium"
+            android:textColor="@color/status_success"
+            android:lineSpacingExtra="4dp"
+            tools:text="✓ Lecture des calendriers personnels\n✓ Accès aux calendriers partagés\n✓ Récupération des événements" />
+
+    </LinearLayout>
+
+    <!-- Boutons de navigation -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_extra_large"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Bouton Annuler -->
+        <Button
+            android:id="@+id/cancelButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/touch_target_large"
+            android:layout_weight="1"
+            android:layout_marginEnd="@dimen/spacing_medium"
+            android:text="Annuler"
+            android:textSize="@dimen/text_size_medium" />
+
+        <!-- Bouton Étape suivante -->
+        <Button
+            android:id="@+id/nextStepButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/touch_target_large"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/spacing_medium"
+            android:text="Étape suivante"
+            android:textSize="@dimen/text_size_medium"
+            android:enabled="false" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

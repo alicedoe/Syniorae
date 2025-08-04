@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModelProvider
 
 /**
  * Factory pour créer SettingsViewModel avec ses dépendances
- * Pour l'instant simple car SettingsFragment n'a pas de logique complexe
  */
 class SettingsViewModelFactory : ViewModelProvider.Factory {
 
@@ -14,14 +13,21 @@ class SettingsViewModelFactory : ViewModelProvider.Factory {
         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
             return SettingsViewModel() as T
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
 
 /**
- * ViewModel simple pour la page des paramètres
- * À développer quand la logique sera implémentée
+ * ViewModel pour la page des paramètres détaillés (Page 3)
+ * Pour l'instant, page placeholder selon le cahier des charges
  */
 class SettingsViewModel : ViewModel() {
-    // TODO: Implémenter la logique des paramètres détaillés
+
+    init {
+        // TODO: Implémenter la logique des paramètres détaillés
+        // - Gestion des cartes de paramètres (étapes 2-6 du tunnel)
+        // - Carte compte Google connecté
+        // - Actions de déconnexion
+        // - Navigation vers les étapes de configuration individuelles
+    }
 }

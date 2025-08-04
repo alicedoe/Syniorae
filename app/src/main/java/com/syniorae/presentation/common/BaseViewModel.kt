@@ -108,3 +108,10 @@ sealed class NavigationEvent {
     object NavigateBack : NavigationEvent()
     data class NavigateToWidgetConfig(val widgetType: String) : NavigationEvent()
 }
+
+/**
+ * Événements spéciaux de configuration
+ */
+sealed class ConfigurationSpecialEvent {
+    object LaunchConfigurationTunnel : ConfigurationSpecialEvent()
+}

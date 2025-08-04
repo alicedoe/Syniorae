@@ -2,10 +2,11 @@ package com.syniorae
 
 import android.app.Application
 import android.util.Log
+import com.syniorae.core.di.DependencyInjection
 
 /**
  * Classe Application principale de SyniOrae
- * Point d'entrée de l'application pour l'initialisation globale
+ * Version simple
  */
 class SyniOraeApplication : Application() {
 
@@ -21,8 +22,7 @@ class SyniOraeApplication : Application() {
 
         Log.d(TAG, "Application SyniOrae initialisée")
 
-        // TODO: Initialisation Hilt (plus tard)
-        // TODO: Initialisation des préférences
-        // TODO: Initialisation des utilitaires globaux
+        // Initialiser l'injection de dépendances simple
+        DependencyInjection.initialize(applicationContext)
     }
 }
