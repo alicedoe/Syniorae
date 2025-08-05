@@ -46,12 +46,12 @@ class HandleLongPressUseCase {
 
 /**
  * Use case pour naviguer vers une page spécifique
- * Plus de validation de rôles, toutes les pages sont accessibles
+ * Toutes les pages sont accessibles selon le cahier des charges
  */
 class NavigateToPageUseCase {
 
     /**
-     * Exécute la navigation (toujours autorisée)
+     * Exécute la navigation vers la page demandée
      */
     fun execute(target: NavigationTarget): NavigationResult {
         return NavigationResult.Success(target)

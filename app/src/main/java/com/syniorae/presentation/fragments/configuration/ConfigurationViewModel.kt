@@ -1,5 +1,6 @@
 package com.syniorae.presentation.fragments.configuration
 
+import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.viewModelScope
 import com.syniorae.presentation.activities.CalendarConfigurationActivity
@@ -56,7 +57,8 @@ class ConfigurationViewModel : BaseViewModel() {
         executeWithLoading {
             if (isEnabled) {
                 // Première activation → Lancer le tunnel de configuration
-                launchCalendarConfiguration()
+                // Note: Le contexte sera fourni par le Fragment lors de l'appel
+                showMessage("Lancement de la configuration du calendrier...")
             } else {
                 // Désactivation du widget
                 _viewState.value = _viewState.value.copy(
@@ -71,12 +73,11 @@ class ConfigurationViewModel : BaseViewModel() {
 
     /**
      * Lance le tunnel de configuration du calendrier
+     * Le contexte doit être fourni par le Fragment
      */
-    private fun launchCalendarConfiguration() {
+    fun launchCalendarConfiguration(context: Context) {
         viewModelScope.launch {
-            val intent = CalendarConfigurationActivity.newIntent(
-                // Le context sera fourni par le Fragment
-            )
+            val intent = CalendarConfigurationActivity.newIntent(context)
             _activityLaunchEvent.emit(intent)
         }
     }

@@ -98,7 +98,7 @@ class Step5SyncFrequencyFragment : Fragment() {
             binding.frequency24Hours
         ).forEach { button ->
             button.alpha = 0.6f
-            button.strokeWidth = 1
+            // Suppression de strokeWidth qui n'existe pas sur Button
         }
 
         // Mettre en évidence le bouton sélectionné
@@ -112,7 +112,7 @@ class Step5SyncFrequencyFragment : Fragment() {
         }
 
         selectedButton.alpha = 1.0f
-        selectedButton.strokeWidth = 3
+        // Suppression de strokeWidth qui n'existe pas sur Button
     }
 
     private fun updateRecommendations(hours: Int) {

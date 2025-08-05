@@ -107,6 +107,7 @@
 
     <!-- Labels du SeekBar -->
     <LinearLayout
+        android:id="@+id/seekBarLabels"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
@@ -148,7 +149,7 @@
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eventsSeekBar">
+        app:layout_constraintTop_toBottomOf="@id/seekBarLabels">
 
         <Button
             android:id="@+id/preset25Events"
@@ -189,34 +190,38 @@
 
     <!-- Boutons de navigation -->
     <LinearLayout
+        android:id="@+id/navigationButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
         android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eventsSeekBar">
+        app:layout_constraintTop_toBottomOf="@id/presetButtons">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="10"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@android:color/darker_gray" />
-
-        <!-- Spacer flexible pour pousser le deuxième TextView à droite -->
-        <View
+        <!-- Bouton Précédent -->
+        <Button
+            android:id="@+id/previousButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_height="@dimen/touch_target_large"
+            android:layout_weight="1"
+            android:layout_marginEnd="@dimen/spacing_medium"
+            android:text="Précédent"
+            android:textSize="@dimen/text_size_medium" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="200"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@android:color/darker_gray" />
+        <!-- Bouton Suivant -->
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/touch_target_large"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/spacing_medium"
+            android:text="Suivant"
+            android:textSize="@dimen/text_size_medium" />
 
     </LinearLayout>
 

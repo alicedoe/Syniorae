@@ -19,7 +19,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Étape 2/6 - Choix du calendrier" />
+        tools:text="Étape 6/6 - Associations d'icônes" />
 
     <!-- Description -->
     <TextView
@@ -32,80 +32,63 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stepTitle"
-        tools:text="Sélectionnez le calendrier à synchroniser" />
+        tools:text="Associez des mots-clés à des icônes pour vos événements (optionnel)" />
 
-    <!-- Informations du calendrier sélectionné -->
-    <LinearLayout
-        android:id="@+id/selectedCalendarInfo"
+    <!-- Compteur d'associations -->
+    <TextView
+        android:id="@+id/associationsCount"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:orientation="vertical"
+        android:textSize="@dimen/text_size_medium"
         android:gravity="center"
-        android:background="@drawable/rounded_background_light"
-        android:padding="@dimen/padding_medium"
-        android:visibility="gone"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stepDescription"
-        tools:visibility="visible">
+        tools:text="3 association(s) créée(s)" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✓ Calendrier sélectionné"
-            android:textSize="@dimen/text_size_medium"
-            android:textColor="@android:color/holo_green_dark"
-            android:textStyle="bold" />
+    <!-- Bouton d'ajout -->
+    <Button
+        android:id="@+id/addAssociationButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Ajouter une association"
+        android:textSize="@dimen/text_size_medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/associationsCount" />
 
-        <TextView
-            android:id="@+id/selectedCalendarName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="@dimen/text_size_medium"
-            tools:text="Calendrier sélectionné : Principal" />
-
-    </LinearLayout>
-
-    <!-- Liste des calendriers -->
-    <androidx.cardview.widget.CardView
+    <!-- Liste des associations -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/associationsRecyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
         android:layout_marginBottom="80dp"
-        app:cardCornerRadius="@dimen/card_corner_radius"
-        app:cardElevation="@dimen/card_elevation"
         app:layout_constraintBottom_toTopOf="@id/navigationButtons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/selectedCalendarInfo">
+        app:layout_constraintTop_toBottomOf="@id/addAssociationButton"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_icon_association" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="@dimen/padding_medium">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Vos calendriers Google :"
-                android:textSize="@dimen/text_size_large"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/calendarsRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                tools:itemCount="4"
-                tools:listitem="@layout/item_calendar_selection" />
-
-        </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
+    <!-- Message d'état vide -->
+    <TextView
+        android:id="@+id/emptyState"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Aucune association créée.\nUtilisez le bouton ci-dessus pour en ajouter."
+        android:textSize="@dimen/text_size_medium"
+        android:gravity="center"
+        android:textColor="@android:color/darker_gray"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/associationsRecyclerView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/associationsRecyclerView"
+        tools:visibility="visible" />
 
     <!-- Boutons de navigation -->
     <LinearLayout
@@ -126,20 +109,31 @@
             android:layout_width="0dp"
             android:layout_height="@dimen/touch_target_large"
             android:layout_weight="1"
-            android:layout_marginEnd="@dimen/spacing_medium"
+            android:layout_marginEnd="@dimen/spacing_small"
             android:text="Précédent"
             android:textSize="@dimen/text_size_medium" />
 
-        <!-- Bouton Suivant -->
+        <!-- Bouton Ignorer -->
         <Button
-            android:id="@+id/nextButton"
+            android:id="@+id/skipButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="@dimen/touch_target_large"
             android:layout_weight="1"
-            android:layout_marginStart="@dimen/spacing_medium"
-            android:text="Suivant"
-            android:textSize="@dimen/text_size_medium"
-            android:enabled="false" />
+            android:layout_marginStart="@dimen/spacing_small"
+            android:layout_marginEnd="@dimen/spacing_small"
+            android:text="Ignorer"
+            android:textSize="@dimen/text_size_medium" />
+
+        <!-- Bouton Terminer -->
+        <Button
+            android:id="@+id/finishButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/touch_target_large"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/spacing_small"
+            android:text="Terminer"
+            android:textSize="@dimen/text_size_medium" />
 
     </LinearLayout>
 

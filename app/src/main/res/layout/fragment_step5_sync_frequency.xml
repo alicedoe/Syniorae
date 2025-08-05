@@ -12,8 +12,8 @@
         android:id="@+id/stepTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:textSize="@dimen/text_size_extra_large"
+        android:layout_marginTop="16dp"
+        android:textSize="@dimen/text_size_large"
         android:textStyle="bold"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
@@ -26,7 +26,7 @@
         android:id="@+id/stepDescription"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:textSize="@dimen/text_size_medium"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
@@ -34,80 +34,99 @@
         app:layout_constraintTop_toBottomOf="@id/stepTitle"
         tools:text="À quelle fréquence voulez-vous synchroniser votre calendrier ?" />
 
-    <!-- Options de fréquence -->
+    <!-- Options de fréquence en grille compacte -->
     <LinearLayout
         android:id="@+id/frequencyOptions"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="24dp"
         android:orientation="vertical"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stepDescription">
 
-        <Button
-            android:id="@+id/frequency1Hour"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+        <!-- Première ligne : 1h et 2h -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Toutes les heures"
-            android:textSize="@dimen/text_size_medium"
-            android:minHeight="@dimen/touch_target_large"
-            android:padding="@dimen/padding_medium" />
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
 
-        <Button
-            android:id="@+id/frequency2Hours"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Toutes les 2 heures"
-            android:textSize="@dimen/text_size_medium"
-            android:minHeight="@dimen/touch_target_large"
-            android:padding="@dimen/padding_medium" />
+            <Button
+                android:id="@+id/frequency1Hour"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Toutes les heures"
+                android:textSize="14sp"
+                android:padding="8dp" />
 
+            <Button
+                android:id="@+id/frequency2Hours"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="Toutes les 2h"
+                android:textSize="14sp"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <!-- Deuxième ligne : 4h (recommandé) -->
         <Button
             android:id="@+id/frequency4Hours"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Toutes les 4 heures (recommandé)"
-            android:textSize="@dimen/text_size_medium"
-            android:minHeight="@dimen/touch_target_large"
-            android:padding="@dimen/padding_medium" />
+            android:layout_height="48dp"
+            android:layout_marginBottom="8dp"
+            android:text="Toutes les 4h (recommandé)"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:padding="8dp" />
 
-        <Button
-            android:id="@+id/frequency8Hours"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+        <!-- Troisième ligne : 8h et 24h -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Toutes les 8 heures"
-            android:textSize="@dimen/text_size_medium"
-            android:minHeight="@dimen/touch_target_large"
-            android:padding="@dimen/padding_medium" />
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/frequency24Hours"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Une fois par jour"
-            android:textSize="@dimen/text_size_medium"
-            android:minHeight="@dimen/touch_target_large"
-            android:padding="@dimen/padding_medium" />
+            <Button
+                android:id="@+id/frequency8Hours"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Toutes les 8h"
+                android:textSize="14sp"
+                android:padding="8dp" />
+
+            <Button
+                android:id="@+id/frequency24Hours"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="Une fois par jour"
+                android:textSize="14sp"
+                android:padding="8dp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
-    <!-- Informations sur l'impact -->
+    <!-- Informations sur l'impact (version compacte) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/impactCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="20dp"
         app:cardCornerRadius="@dimen/card_corner_radius"
         app:cardElevation="2dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -118,29 +137,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="@dimen/padding_medium">
+            android:padding="12dp">
 
             <TextView
                 android:id="@+id/batteryImpact"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="@dimen/text_size_medium"
-                android:layout_marginBottom="4dp"
+                android:textSize="@dimen/text_size_small"
+                android:layout_marginBottom="2dp"
                 tools:text="🔋 Impact batterie : Faible" />
 
             <TextView
                 android:id="@+id/dataUsage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="@dimen/text_size_medium"
-                android:layout_marginBottom="8dp"
+                android:textSize="@dimen/text_size_small"
+                android:layout_marginBottom="4dp"
                 tools:text="📊 Consommation data : Faible" />
 
             <TextView
                 android:id="@+id/recommendation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="@dimen/text_size_medium"
+                android:textSize="@dimen/text_size_small"
                 android:textStyle="italic"
                 android:textColor="@color/design_default_color_primary"
                 tools:text="💡 Recommandé pour un usage normal" />
@@ -151,34 +170,36 @@
 
     <!-- Boutons de navigation -->
     <LinearLayout
+        android:id="@+id/navigationButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="16dp"
         android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eventsSeekBar">
+        app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="10"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@android:color/darker_gray" />
-
-        <!-- Spacer flexible pour pousser le deuxième TextView à droite -->
-        <View
+        <!-- Bouton Précédent -->
+        <Button
+            android:id="@+id/previousButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Précédent"
+            android:textSize="@dimen/text_size_medium" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="200"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@android:color/darker_gray" />
+        <!-- Bouton Suivant -->
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Étape suivante"
+            android:textSize="@dimen/text_size_medium" />
 
     </LinearLayout>
 

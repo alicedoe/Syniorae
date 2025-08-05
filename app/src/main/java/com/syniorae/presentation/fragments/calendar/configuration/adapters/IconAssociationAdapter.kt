@@ -38,7 +38,7 @@ class IconAssociationAdapter(
 
             // Bouton supprimer
             binding.deleteButton.setOnClickListener {
-                onDeleteClick(bindingAdapterPosition)
+                onDeleteClick(adapterPosition)
             }
 
             // Exemple d'utilisation

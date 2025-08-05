@@ -23,6 +23,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Activité pour le tunnel de configuration du calendrier -->
+        <activity
+            android:name=".presentation.activities.CalendarConfigurationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Syniorae"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>

@@ -9,7 +9,7 @@ open class SyniOraeException(
 ) : Exception(message, cause)
 
 /**
- * Exceptions liées à l'authentification
+ * Exceptions liées à l'authentification Google
  */
 class AuthenticationException(
     message: String,
@@ -138,25 +138,5 @@ class JsonException(
 
         fun validationFailed(fileName: String, errors: List<String>) =
             JsonException("Validation échouée pour $fileName: ${errors.joinToString(", ")}")
-    }
-}
-
-/**
- * Exceptions liées aux permissions utilisateur
- */
-class PermissionException(
-    message: String,
-    cause: Throwable? = null
-) : SyniOraeException(message, cause) {
-
-    companion object {
-        fun accessDenied(resource: String) =
-            PermissionException("Accès refusé à: $resource")
-
-        fun configuratorModeRequired() =
-            PermissionException("Mode configurateur requis pour cette action")
-
-        fun firstLaunchNotCompleted() =
-            PermissionException("Premier lancement non terminé")
     }
 }

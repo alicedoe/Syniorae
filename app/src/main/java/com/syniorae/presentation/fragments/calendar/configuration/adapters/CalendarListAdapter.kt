@@ -65,7 +65,7 @@ class CalendarListAdapter(
 
                 // Mettre à jour l'affichage
                 notifyItemChanged(currentList.indexOfFirst { it.id == previousSelected })
-                notifyItemChanged(bindingAdapterPosition)
+                notifyItemChanged(adapterPosition)
 
                 // Notifier la sélection
                 onCalendarSelected(calendar)
