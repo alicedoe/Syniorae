@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Fragment de la page de configuration des widgets (Page 2)
- * Version complète avec gestion du tunnel de configuration
+ * Version corrigée avec Activity Result API
  */
 class ConfigurationFragment : Fragment() {
 
@@ -30,8 +31,18 @@ class ConfigurationFragment : Fragment() {
         ConfigurationViewModelFactory()
     }
 
-    companion object {
-        private const val REQUEST_CALENDAR_CONFIG = 1001
+    // Activity Result Launcher pour remplacer startActivityForResult
+    private val calendarConfigurationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                viewModel.onConfigurationCompleted()
+            }
+            Activity.RESULT_CANCELED -> {
+                viewModel.onConfigurationCancelled()
+            }
+        }
     }
 
     override fun onCreateView(
@@ -203,31 +214,11 @@ class ConfigurationFragment : Fragment() {
 
     /**
      * Lance le tunnel de configuration du calendrier
+     * Utilise la nouvelle API Activity Result
      */
     private fun launchCalendarConfiguration() {
         val intent = CalendarConfigurationActivity.newIntent(requireContext())
-
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, REQUEST_CALENDAR_CONFIG)
-    }
-
-    /**
-     * Gère le retour du tunnel de configuration
-     */
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_CALENDAR_CONFIG) {
-            when (resultCode) {
-                Activity.RESULT_OK -> {
-                    viewModel.onConfigurationCompleted()
-                }
-                Activity.RESULT_CANCELED -> {
-                    viewModel.onConfigurationCancelled()
-                }
-            }
-        }
+        calendarConfigurationLauncher.launch(intent)
     }
 
     /**

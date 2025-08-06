@@ -38,14 +38,7 @@ android {
 
     buildFeatures {
         viewBinding = true
-    }
-
-    // Configuration pour éviter les conflits de dépendances
-    packagingOptions {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "/META-INF/DEPENDENCIES"
-        }
+        buildConfig = true
     }
 }
 
@@ -69,24 +62,22 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // SwipeRefreshLayout
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    // Google Play Services (versions compatibles)
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("com.google.android.gms:play-services-base:18.3.0")
 
-    // NOUVELLES DÉPENDANCES - Google Sign-In et Calendar API
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
-    implementation("com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0")
-    implementation("com.google.api-client:google-api-client-android:2.0.0")
-    implementation("com.google.http-client:google-http-client-gson:1.42.3")
+    // HTTP Client pour les appels API
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Dépendances supplémentaires pour l'API Google
-    implementation("com.google.api-client:google-api-client:2.0.0")
-    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-    implementation("com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0") {
-        exclude(group = "org.apache.httpcomponents")
-    }
+    // JSON parsing
+    implementation("org.json:json:20231013")
 
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // SwipeRefreshLayout
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }

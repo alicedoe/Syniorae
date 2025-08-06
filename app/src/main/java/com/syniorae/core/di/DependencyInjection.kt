@@ -1,24 +1,19 @@
 package com.syniorae.core.di
 
 import android.content.Context
-import com.syniorae.data.auth.GoogleAuthManager
 import com.syniorae.data.local.json.JsonFileManager
-import com.syniorae.data.remote.calendar.GoogleCalendarApiManager
-import com.syniorae.data.repository.calendar.CalendarRepository
 import com.syniorae.data.repository.widgets.WidgetRepository
 
 /**
  * Injection de dépendances simple
- * MODIFICATION COMPLÈTE - Ajoute les managers Google
+ * Gère les instances des classes principales
  */
 object DependencyInjection {
 
     private var _context: Context? = null
     private var _jsonFileManager: JsonFileManager? = null
     private var _widgetRepository: WidgetRepository? = null
-    private var _calendarRepository: CalendarRepository? = null
-    private var _googleAuthManager: GoogleAuthManager? = null
-    private var _googleCalendarApiManager: GoogleCalendarApiManager? = null
+    private var _calendarRepository: com.syniorae.data.repository.calendar.CalendarRepository? = null
 
     /**
      * Initialise avec le contexte de l'application
@@ -57,33 +52,11 @@ object DependencyInjection {
     /**
      * Récupère le CalendarRepository (singleton)
      */
-    fun getCalendarRepository(): CalendarRepository {
+    fun getCalendarRepository(): com.syniorae.data.repository.calendar.CalendarRepository {
         if (_calendarRepository == null) {
-            _calendarRepository = CalendarRepository(getJsonFileManager()).apply {
-                initializeGoogleApi(getContext())
-            }
+            _calendarRepository = com.syniorae.data.repository.calendar.CalendarRepository(getJsonFileManager())
         }
         return _calendarRepository!!
-    }
-
-    /**
-     * Récupère le GoogleAuthManager (singleton)
-     */
-    fun getGoogleAuthManager(): GoogleAuthManager {
-        if (_googleAuthManager == null) {
-            _googleAuthManager = GoogleAuthManager(getContext())
-        }
-        return _googleAuthManager!!
-    }
-
-    /**
-     * Récupère le GoogleCalendarApiManager (singleton)
-     */
-    fun getGoogleCalendarApiManager(): GoogleCalendarApiManager {
-        if (_googleCalendarApiManager == null) {
-            _googleCalendarApiManager = GoogleCalendarApiManager(getContext())
-        }
-        return _googleCalendarApiManager!!
     }
 
     /**
@@ -93,8 +66,6 @@ object DependencyInjection {
         _jsonFileManager = null
         _widgetRepository = null
         _calendarRepository = null
-        _googleAuthManager = null
-        _googleCalendarApiManager = null
     }
 
     /**
@@ -116,42 +87,23 @@ object DependencyInjection {
     }
 
     /**
+     * Récupère le GoogleAuthManager (singleton)
+     */
+    fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
+        return com.syniorae.data.remote.google.GoogleAuthManager(getContext())
+    }
+
+    /**
+     * Récupère le GoogleCalendarApi (singleton)
+     */
+    fun getGoogleCalendarApi(): com.syniorae.data.remote.google.GoogleCalendarApi {
+        return com.syniorae.data.remote.google.GoogleCalendarApi(getGoogleAuthManager())
+    }
+
+    /**
      * Force la création d'une nouvelle instance du CalendarRepository
      */
     fun resetCalendarRepository() {
         _calendarRepository = null
-    }
-
-    /**
-     * Force la création d'une nouvelle instance des managers Google
-     * Utile après déconnexion/reconnexion Google
-     */
-    fun resetGoogleManagers() {
-        _googleAuthManager = null
-        _googleCalendarApiManager = null
-        _calendarRepository = null // Dépend des managers Google
-    }
-
-    /**
-     * Vérifie si toutes les dépendances sont initialisées
-     */
-    fun isFullyInitialized(): Boolean {
-        return _context != null &&
-                _jsonFileManager != null &&
-                _widgetRepository != null &&
-                _calendarRepository != null &&
-                _googleAuthManager != null &&
-                _googleCalendarApiManager != null
-    }
-
-    /**
-     * Initialise toutes les dépendances de manière proactive
-     */
-    fun initializeAllDependencies() {
-        getJsonFileManager()
-        getWidgetRepository()
-        getCalendarRepository()
-        getGoogleAuthManager()
-        getGoogleCalendarApiManager()
     }
 }
