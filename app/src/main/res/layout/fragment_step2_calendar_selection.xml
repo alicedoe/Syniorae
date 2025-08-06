@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:text="✓ Calendrier sélectionné"
             android:textSize="@dimen/text_size_medium"
-            android:textColor="@android:color/holo_green_dark"
+            android:textColor="@color/status_success"
             android:textStyle="bold" />
 
         <TextView
@@ -68,8 +68,33 @@
 
     </LinearLayout>
 
+    <!-- Bouton actualiser -->
+    <Button
+        android:id="@+id/refreshButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="🔄 Actualiser"
+        android:textSize="@dimen/text_size_small"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/selectedCalendarInfo" />
+
+    <!-- Indicateur de chargement -->
+    <ProgressBar
+        android:id="@+id/loadingIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/navigationButtons"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/refreshButton"
+        tools:visibility="visible" />
+
     <!-- Liste des calendriers -->
     <androidx.cardview.widget.CardView
+        android:id="@+id/calendarsCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
@@ -79,7 +104,7 @@
         app:layout_constraintBottom_toTopOf="@id/navigationButtons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/selectedCalendarInfo">
+        app:layout_constraintTop_toBottomOf="@id/refreshButton">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -100,8 +125,76 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
+                android:visibility="gone"
                 tools:itemCount="4"
-                tools:listitem="@layout/item_calendar_selection" />
+                tools:listitem="@layout/item_calendar_selection"
+                tools:visibility="visible" />
+
+            <!-- État vide -->
+            <LinearLayout
+                android:id="@+id/emptyState"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📅"
+                    android:textSize="48sp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:id="@+id/emptyStateMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/text_size_medium"
+                    android:gravity="center"
+                    android:textColor="@android:color/darker_gray"
+                    tools:text="Aucun calendrier trouvé" />
+
+            </LinearLayout>
+
+            <!-- État d'erreur -->
+            <LinearLayout
+                android:id="@+id/errorState"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚠️"
+                    android:textSize="48sp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:id="@+id/errorStateMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/text_size_medium"
+                    android:gravity="center"
+                    android:textColor="@color/status_error"
+                    android:layout_marginBottom="16dp"
+                    tools:text="Erreur lors du chargement" />
+
+                <Button
+                    android:id="@+id/retryButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Réessayer"
+                    android:textSize="@dimen/text_size_medium" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

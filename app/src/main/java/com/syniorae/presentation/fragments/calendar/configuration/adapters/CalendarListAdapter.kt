@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.syniorae.databinding.ItemCalendarSelectionBinding
-import com.syniorae.presentation.fragments.calendar.configuration.steps.CalendarItem
+import com.syniorae.data.remote.calendar.CalendarItem
 
 /**
  * Adapter pour afficher la liste des calendriers Google
@@ -28,6 +28,19 @@ class CalendarListAdapter(
 
     override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
         holder.bind(getItem(position))
+    }
+
+    fun setSelectedCalendar(calendarId: String) {
+        val previousSelected = selectedCalendarId
+        selectedCalendarId = calendarId
+
+        // Mettre à jour l'affichage des calendriers concernés
+        currentList.forEachIndexed { index, calendar ->
+            when {
+                calendar.id == previousSelected -> notifyItemChanged(index)
+                calendar.id == calendarId -> notifyItemChanged(index)
+            }
+        }
     }
 
     inner class CalendarViewHolder(
@@ -56,19 +69,27 @@ class CalendarListAdapter(
 
             // Style de la carte selon sélection
             binding.root.alpha = if (isSelected) 1.0f else 0.8f
-            binding.root.elevation = if (isSelected) 8f else 4f
+
+            // Animation de sélection
+            if (isSelected) {
+                binding.root.animate()
+                    .scaleX(1.02f)
+                    .scaleY(1.02f)
+                    .setDuration(150)
+                    .start()
+            } else {
+                binding.root.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(150)
+                    .start()
+            }
 
             // Clic sur l'item
             binding.root.setOnClickListener {
-                val previousSelected = selectedCalendarId
-                selectedCalendarId = calendar.id
-
-                // Mettre à jour l'affichage
-                notifyItemChanged(currentList.indexOfFirst { it.id == previousSelected })
-                notifyItemChanged(adapterPosition)
-
-                // Notifier la sélection
-                onCalendarSelected(calendar)
+                if (!isSelected) {
+                    onCalendarSelected(calendar)
+                }
             }
         }
     }

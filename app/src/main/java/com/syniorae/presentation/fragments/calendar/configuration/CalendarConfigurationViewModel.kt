@@ -36,6 +36,10 @@ class CalendarConfigurationViewModel : BaseViewModel() {
     private val _currentStep = MutableStateFlow(1)
     val currentStep = _currentStep.asStateFlow()
 
+    fun setLoading(isLoading: Boolean) {
+        _isLoading.value = isLoading
+    }
+
     /**
      * Passe à l'étape suivante
      */

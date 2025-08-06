@@ -2,6 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- NOUVELLES PERMISSIONS - Pour l'API Google Calendar -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+
+    <!-- Permission pour les notifications (sync en arrière-plan) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name=".SyniOraeApplication"
         android:allowBackup="true"
@@ -12,8 +22,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Syniorae"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
 
+        <!-- Activité principale -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -24,17 +36,37 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".services.CalendarSyncService"
-            android:enabled="true"
-            android:exported="false" />
-
-        <!-- Activité pour le tunnel de configuration du calendrier -->
+        <!-- Activité tunnel de configuration calendrier -->
         <activity
             android:name=".presentation.activities.CalendarConfigurationActivity"
             android:exported="false"
             android:theme="@style/Theme.Syniorae"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <!-- Service synchronisation calendrier -->
+        <service
+            android:name=".services.CalendarSyncService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Provider pour partager les fichiers (si nécessaire pour Google Auth) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Configuration Google Play Services -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
     </application>
 
