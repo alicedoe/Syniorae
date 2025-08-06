@@ -1,6 +1,11 @@
 package com.syniorae.presentation.fragments.home
 
 import androidx.lifecycle.viewModelScope
+import com.syniorae.data.local.json.JsonFileManager
+import com.syniorae.data.local.json.JsonFileType
+import com.syniorae.data.local.json.models.EventsJsonModel
+import com.syniorae.data.repository.widgets.WidgetRepository
+import com.syniorae.domain.models.widgets.WidgetType
 import com.syniorae.domain.models.widgets.calendar.CalendarEvent
 import com.syniorae.presentation.common.BaseViewModel
 import com.syniorae.presentation.common.NavigationEvent
@@ -13,9 +18,12 @@ import java.util.*
 
 /**
  * ViewModel pour la page d'accueil (Page 1)
- * Version simplifiée sans dépendances externes
+ * Version complète avec lecture des données JSON
  */
-class HomeViewModel : BaseViewModel() {
+class HomeViewModel(
+    private val widgetRepository: WidgetRepository,
+    private val jsonFileManager: JsonFileManager
+) : BaseViewModel() {
 
     // État de la vue
     private val _viewState = MutableStateFlow(HomeViewState())
@@ -33,6 +41,7 @@ class HomeViewModel : BaseViewModel() {
 
     init {
         loadInitialData()
+        observeWidgetChanges()
     }
 
     /**
@@ -40,12 +49,111 @@ class HomeViewModel : BaseViewModel() {
      */
     private fun loadInitialData() {
         updateCurrentDate()
-        // Pour l'instant, pas de widget calendrier activé
-        _viewState.value = _viewState.value.copy(
-            hasCalendarWidget = false,
-            todayEvents = emptyList(),
-            futureEvents = emptyList()
-        )
+        loadCalendarEvents()
+    }
+
+    /**
+     * Observe les changements de widgets pour recharger les données
+     */
+    private fun observeWidgetChanges() {
+        viewModelScope.launch {
+            widgetRepository.widgets.collect { widgets ->
+                val calendarWidget = widgets.find { it.type == WidgetType.CALENDAR }
+                val hasCalendarWidget = calendarWidget?.isActive() == true
+
+                if (hasCalendarWidget != _viewState.value.hasCalendarWidget) {
+                    loadCalendarEvents()
+                }
+            }
+        }
+    }
+
+    /**
+     * Charge les événements du calendrier depuis les fichiers JSON
+     */
+    private fun loadCalendarEvents() {
+        executeWithLoading {
+            try {
+                // Vérifier si le widget calendrier est actif
+                val calendarWidget = widgetRepository.getWidget(WidgetType.CALENDAR)
+                val hasActiveCalendar = calendarWidget?.isActive() == true
+
+                if (!hasActiveCalendar) {
+                    // Pas de widget calendrier actif
+                    _viewState.value = _viewState.value.copy(
+                        hasCalendarWidget = false,
+                        todayEvents = emptyList(),
+                        futureEvents = emptyList()
+                    )
+                    return@executeWithLoading
+                }
+
+                // Lire le fichier d'événements JSON
+                val eventsData = jsonFileManager.readJsonFile(
+                    WidgetType.CALENDAR,
+                    JsonFileType.DATA,
+                    EventsJsonModel::class.java
+                )
+
+                if (eventsData == null) {
+                    // Fichier d'événements pas trouvé ou vide
+                    _viewState.value = _viewState.value.copy(
+                        hasCalendarWidget = true,
+                        todayEvents = emptyList(),
+                        futureEvents = emptyList()
+                    )
+                    return@executeWithLoading
+                }
+
+                // Convertir les événements JSON en CalendarEvent
+                val calendarEvents = eventsData.evenements.map { eventJson ->
+                    CalendarEvent(
+                        id = eventJson.id,
+                        title = eventJson.titre,
+                        startDateTime = eventJson.date_debut,
+                        endDateTime = eventJson.date_fin,
+                        isAllDay = eventJson.toute_journee,
+                        isMultiDay = eventJson.multi_jours,
+                        isCurrentlyRunning = eventJson.isCurrentlyRunning()
+                    )
+                }
+
+                // Séparer les événements d'aujourd'hui et du futur
+                val now = LocalDateTime.now()
+                val today = now.toLocalDate()
+
+                val todayEvents = calendarEvents.filter { event ->
+                    event.startDateTime.toLocalDate() == today
+                }.sortedBy { it.startDateTime }
+
+                val futureEvents = calendarEvents.filter { event ->
+                    event.startDateTime.toLocalDate().isAfter(today)
+                }.sortedBy { it.startDateTime }
+
+                // Mettre à jour l'état
+                _viewState.value = _viewState.value.copy(
+                    hasCalendarWidget = true,
+                    todayEvents = todayEvents,
+                    futureEvents = futureEvents
+                )
+
+            } catch (e: Exception) {
+                // Erreur lors du chargement des événements
+                _viewState.value = _viewState.value.copy(
+                    hasCalendarWidget = true,
+                    todayEvents = emptyList(),
+                    futureEvents = emptyList()
+                )
+                showError("Erreur lors du chargement des événements: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Rafraîchit les données (pull to refresh)
+     */
+    fun refreshData() {
+        loadCalendarEvents()
     }
 
     /**
@@ -120,6 +228,30 @@ class HomeViewModel : BaseViewModel() {
             _navigationEvent.emit(NavigationEvent.NavigateToConfiguration)
         }
     }
+
+    /**
+     * Force une synchronisation manuelle depuis la page d'accueil
+     */
+    fun forceSyncCalendar() {
+        executeWithLoading {
+            val calendarWidget = widgetRepository.getWidget(WidgetType.CALENDAR)
+
+            if (calendarWidget?.isActive() != true) {
+                showError("Le widget calendrier n'est pas configuré")
+                return@executeWithLoading
+            }
+
+            showMessage("Synchronisation en cours...")
+
+            // TODO: Implémenter la vraie synchronisation ici
+            delay(2000)
+
+            // Recharger les événements après la sync
+            loadCalendarEvents()
+
+            showMessage("Synchronisation terminée")
+        }
+    }
 }
 
 /**
@@ -157,5 +289,19 @@ data class HomeViewState(
      */
     fun hasFutureEvents(): Boolean {
         return futureEvents.isNotEmpty()
+    }
+
+    /**
+     * Retourne le nombre total d'événements
+     */
+    fun getTotalEventsCount(): Int {
+        return todayEvents.size + futureEvents.size
+    }
+
+    /**
+     * Vérifie s'il y a des événements en cours maintenant
+     */
+    fun hasCurrentlyRunningEvents(): Boolean {
+        return todayEvents.any { it.isCurrentlyRunning }
     }
 }

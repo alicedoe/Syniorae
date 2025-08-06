@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Repository principal pour la gestion des widgets
+ * Version connectée avec JsonFileManager - CORRIGÉE
  */
 class WidgetRepository(
     private val context: Context,
@@ -50,15 +51,24 @@ class WidgetRepository(
     }
 
     /**
+     * Vérifie si un widget a ses fichiers de configuration JSON
+     */
+    suspend fun hasConfiguration(type: WidgetType): Boolean {
+        return jsonFileManager.hasConfigurationFiles(type)
+    }
+
+    /**
      * Active un widget
      */
     suspend fun enableWidget(type: WidgetType): Boolean {
-        // Vérifier si le widget a sa configuration
-        val hasConfig = jsonFileManager.hasConfigurationFiles(type)
+        // Vérifier si le widget a sa configuration JSON
+        val hasConfig = hasConfiguration(type)
+
         return if (hasConfig) {
+            // Configuration existante → Activer directement
             updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
         } else {
-            // Pas de configuration → passer en mode configuration
+            // Pas de configuration → Mode configuration
             updateWidgetStatus(type, WidgetStatus.CONFIGURING, isConfigured = false)
         }
     }
@@ -67,7 +77,7 @@ class WidgetRepository(
      * Désactive un widget
      */
     suspend fun disableWidget(type: WidgetType): Boolean {
-        return updateWidgetStatus(type, WidgetStatus.OFF)
+        return updateWidgetStatus(type, WidgetStatus.OFF, isConfigured = false)
     }
 
     /**
@@ -81,7 +91,19 @@ class WidgetRepository(
      * Marque un widget comme configuré et l'active
      */
     suspend fun markWidgetConfigured(type: WidgetType): Boolean {
-        return updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
+        // Vérifier que les fichiers JSON existent bien
+        val hasConfig = hasConfiguration(type)
+
+        return if (hasConfig) {
+            updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
+        } else {
+            updateWidgetStatus(
+                type,
+                WidgetStatus.ERROR,
+                isConfigured = false,
+                errorMessage = "Fichiers de configuration manquants"
+            )
+        }
     }
 
     /**
@@ -92,16 +114,51 @@ class WidgetRepository(
     }
 
     /**
-     * Vérifie si un widget a ses fichiers de configuration
+     * Supprime complètement la configuration d'un widget
      */
-    suspend fun hasConfiguration(type: WidgetType): Boolean {
-        return jsonFileManager.hasConfigurationFiles(type)
+    suspend fun deleteWidgetConfiguration(type: WidgetType): Boolean {
+        return try {
+            // Supprimer les fichiers JSON
+            val filesDeleted = jsonFileManager.deleteWidgetFiles(type)
+
+            if (filesDeleted) {
+                // Remettre le widget à OFF
+                updateWidgetStatus(type, WidgetStatus.OFF, isConfigured = false)
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Restaure la configuration depuis les backups
+     */
+    suspend fun restoreWidgetConfiguration(type: WidgetType): Boolean {
+        return try {
+            val restored = jsonFileManager.restoreFromBackup(type)
+
+            if (restored) {
+                // Vérifier que la restauration a fonctionné
+                val hasConfig = hasConfiguration(type)
+                if (hasConfig) {
+                    updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /**
      * Met à jour le statut d'un widget
      */
-    private suspend fun updateWidgetStatus(
+    private fun updateWidgetStatus(
         type: WidgetType,
         status: WidgetStatus,
         isConfigured: Boolean? = null,
@@ -183,6 +240,28 @@ class WidgetRepository(
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * Nettoie les anciens fichiers et optimise le stockage
+     */
+    suspend fun cleanup(): Boolean {
+        return try {
+            jsonFileManager.cleanup()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Retourne la taille totale du stockage JSON
+     */
+    suspend fun getStorageSize(): Long {
+        return try {
+            jsonFileManager.getTotalStorageSize()
+        } catch (e: Exception) {
+            0L
         }
     }
 }

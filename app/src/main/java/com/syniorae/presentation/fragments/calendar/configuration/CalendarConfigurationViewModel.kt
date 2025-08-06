@@ -1,21 +1,28 @@
 package com.syniorae.presentation.fragments.calendar.configuration
 
 import androidx.lifecycle.viewModelScope
+import com.syniorae.core.di.DependencyInjection
+import com.syniorae.data.local.json.JsonFileType
+import com.syniorae.data.local.json.models.*
+import com.syniorae.domain.models.widgets.WidgetType
 import com.syniorae.domain.models.widgets.calendar.CalendarConfig
 import com.syniorae.domain.models.widgets.calendar.IconAssociation
 import com.syniorae.presentation.common.BaseViewModel
-import com.syniorae.presentation.common.NavigationEvent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 /**
  * ViewModel partagé pour tout le tunnel de configuration du calendrier
  * Gère l'état et la navigation entre les 6 étapes
  */
 class CalendarConfigurationViewModel : BaseViewModel() {
+
+    private val jsonFileManager = DependencyInjection.getJsonFileManager()
+    private val widgetRepository = DependencyInjection.getWidgetRepository()
 
     // État de la configuration
     private val _configState = MutableStateFlow(CalendarConfigState())
@@ -138,20 +145,88 @@ class CalendarConfigurationViewModel : BaseViewModel() {
     }
 
     /**
-     * Termine la configuration
+     * Termine la configuration - Sauvegarde dans les fichiers JSON
      */
     private fun finishConfiguration() {
         executeWithLoading {
             val state = _configState.value
 
-            // TODO: Sauvegarder dans les fichiers JSON
-            // TODO: Activer le widget
-            // TODO: Lancer la première synchronisation
+            try {
+                // 1. Créer le fichier config.json
+                val configModel = ConfigurationJsonModel(
+                    calendrier_id = state.selectedCalendarId,
+                    calendrier_name = state.selectedCalendarName,
+                    nb_semaines_max = state.weeksAhead,
+                    nb_evenements_max = state.maxEvents,
+                    frequence_synchro = state.syncFrequencyHours,
+                    google_account_email = state.googleAccountEmail,
+                    widget_type = "calendar",
+                    is_configured = true,
+                    last_update = LocalDateTime.now()
+                )
 
-            showMessage("Configuration terminée avec succès !")
+                val configSaved = jsonFileManager.writeJsonFile(
+                    WidgetType.CALENDAR,
+                    JsonFileType.CONFIG,
+                    configModel
+                )
 
-            viewModelScope.launch {
-                _navigationEvent.emit(ConfigNavigationEvent.ConfigurationComplete)
+                if (!configSaved) {
+                    throw Exception("Échec de la sauvegarde de la configuration")
+                }
+
+                // 2. Créer le fichier icons.json
+                val iconsModel = IconsJsonModel(
+                    associations = state.iconAssociations.map { association ->
+                        IconAssociationJsonModel(
+                            mots_cles = association.keywords,
+                            icone = association.iconPath,
+                            display_name = association.displayName
+                        )
+                    }
+                )
+
+                val iconsSaved = jsonFileManager.writeJsonFile(
+                    WidgetType.CALENDAR,
+                    JsonFileType.ICONS,
+                    iconsModel
+                )
+
+                if (!iconsSaved) {
+                    throw Exception("Échec de la sauvegarde des associations d'icônes")
+                }
+
+                // 3. Créer le fichier events.json vide (sera rempli à la première sync)
+                val eventsModel = EventsJsonModel.createEmpty()
+
+                val eventsSaved = jsonFileManager.writeJsonFile(
+                    WidgetType.CALENDAR,
+                    JsonFileType.DATA,
+                    eventsModel
+                )
+
+                if (!eventsSaved) {
+                    throw Exception("Échec de la création du fichier d'événements")
+                }
+
+                // 4. Marquer le widget comme configuré dans le repository
+                val widgetConfigured = widgetRepository.markWidgetConfigured(WidgetType.CALENDAR)
+
+                if (!widgetConfigured) {
+                    throw Exception("Échec de l'activation du widget")
+                }
+
+                showMessage("Configuration terminée avec succès !")
+
+                viewModelScope.launch {
+                    _navigationEvent.emit(ConfigNavigationEvent.ConfigurationComplete)
+                }
+
+            } catch (e: Exception) {
+                showError("Erreur lors de la sauvegarde : ${e.message}")
+                viewModelScope.launch {
+                    _navigationEvent.emit(ConfigNavigationEvent.ConfigurationCancelled)
+                }
             }
         }
     }

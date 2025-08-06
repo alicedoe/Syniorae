@@ -1,5 +1,7 @@
 package com.syniorae.presentation.fragments.configuration
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,20 +12,27 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentConfigurationBinding
+import com.syniorae.presentation.activities.CalendarConfigurationActivity
 import com.syniorae.presentation.common.NavigationEvent
 import kotlinx.coroutines.launch
 
 /**
  * Fragment de la page de configuration des widgets (Page 2)
- * Version mise à jour pour gérer le lancement du tunnel de configuration
+ * Version complète avec gestion du tunnel de configuration
  */
 class ConfigurationFragment : Fragment() {
 
     private var _binding: FragmentConfigurationBinding? = null
     private val binding get() = _binding!!
 
-    // ViewModel sans factory (constructeur par défaut)
-    private val viewModel: ConfigurationViewModel by viewModels()
+    // ViewModel avec factory pour injection de dépendances
+    private val viewModel: ConfigurationViewModel by viewModels {
+        ConfigurationViewModelFactory()
+    }
+
+    companion object {
+        private const val REQUEST_CALENDAR_CONFIG = 1001
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,14 +72,8 @@ class ConfigurationFragment : Fragment() {
      */
     private fun setupCalendarWidget() {
         // Toggle du widget calendrier
-        // Toggle du widget calendrier
         binding.calendarWidgetToggle.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                // Lancer le tunnel de configuration avec le contexte
-                viewModel.launchCalendarConfiguration(requireContext())
-            } else {
-                viewModel.toggleCalendarWidget(false)
-            }
+            viewModel.toggleCalendarWidget(isChecked)
         }
 
         // Bouton de configuration
@@ -89,44 +92,39 @@ class ConfigurationFragment : Fragment() {
      */
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
-            // État de la vue
             viewModel.viewState.collect { state ->
                 updateUI(state)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // État de chargement
             viewModel.isLoading.collect { isLoading ->
                 updateLoadingState(isLoading)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // Navigation
             viewModel.navigationEvent.collect { event ->
                 handleNavigationEvent(event)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // Lancement d'activité
-            viewModel.activityLaunchEvent.collect { intent ->
-                startActivity(intent)
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Erreurs
             viewModel.error.collect { error ->
                 showError(error)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // Messages
             viewModel.message.collect { message ->
                 showMessage(message)
+            }
+        }
+
+        // Gestion du lancement du tunnel de configuration
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.configurationLaunchEvent.collect {
+                launchCalendarConfiguration()
             }
         }
     }
@@ -136,7 +134,11 @@ class ConfigurationFragment : Fragment() {
      */
     private fun updateUI(state: ConfigurationViewState) {
         // Widget Calendrier
-        binding.calendarWidgetToggle.isChecked = state.calendarWidget.isEnabled
+
+        // Éviter les boucles infinies sur le toggle
+        if (binding.calendarWidgetToggle.isChecked != state.calendarWidget.isEnabled) {
+            binding.calendarWidgetToggle.isChecked = state.calendarWidget.isEnabled
+        }
 
         if (state.calendarWidget.isEnabled) {
             // Widget activé - afficher les informations
@@ -165,7 +167,7 @@ class ConfigurationFragment : Fragment() {
 
         // État des boutons
         binding.calendarConfigButton.isEnabled = true
-        binding.calendarSyncButton.isEnabled = state.calendarWidget.isEnabled
+        binding.calendarSyncButton.isEnabled = state.calendarWidget.isEnabled && !state.calendarWidget.hasError
     }
 
     /**
@@ -173,6 +175,11 @@ class ConfigurationFragment : Fragment() {
      */
     private fun updateLoadingState(isLoading: Boolean) {
         binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+
+        // Désactiver les interactions pendant le chargement
+        binding.calendarWidgetToggle.isEnabled = !isLoading
+        binding.calendarConfigButton.isEnabled = !isLoading
+        binding.calendarSyncButton.isEnabled = !isLoading
     }
 
     /**
@@ -190,6 +197,35 @@ class ConfigurationFragment : Fragment() {
             }
             else -> {
                 // Autres événements de navigation
+            }
+        }
+    }
+
+    /**
+     * Lance le tunnel de configuration du calendrier
+     */
+    private fun launchCalendarConfiguration() {
+        val intent = CalendarConfigurationActivity.newIntent(requireContext())
+
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, REQUEST_CALENDAR_CONFIG)
+    }
+
+    /**
+     * Gère le retour du tunnel de configuration
+     */
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CALENDAR_CONFIG) {
+            when (resultCode) {
+                Activity.RESULT_OK -> {
+                    viewModel.onConfigurationCompleted()
+                }
+                Activity.RESULT_CANCELED -> {
+                    viewModel.onConfigurationCancelled()
+                }
             }
         }
     }

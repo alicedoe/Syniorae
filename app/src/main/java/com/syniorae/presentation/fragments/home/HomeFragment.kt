@@ -14,11 +14,12 @@ import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentHomeBinding
 import com.syniorae.presentation.common.NavigationEvent
 import com.syniorae.presentation.fragments.home.adapters.TodayEventsAdapter
+import com.syniorae.presentation.fragments.home.adapters.FutureEventsAdapter
 import kotlinx.coroutines.launch
 
 /**
  * Fragment de la page d'accueil (Page 1)
- * Version simplifiée sans dépendances externes
+ * Version complète avec données JSON
  */
 class HomeFragment : Fragment() {
 
@@ -27,9 +28,12 @@ class HomeFragment : Fragment() {
 
     // Adaptateurs
     private lateinit var todayEventsAdapter: TodayEventsAdapter
+    private lateinit var futureEventsAdapter: FutureEventsAdapter
 
-    // ViewModel sans factory (constructeur par défaut)
-    private val viewModel: HomeViewModel by viewModels()
+    // ViewModel avec factory pour injection de dépendances
+    private val viewModel: HomeViewModel by viewModels {
+        HomeViewModelFactory()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,6 +57,7 @@ class HomeFragment : Fragment() {
     private fun setupUI() {
         setupSettingsIcon()
         setupAdapters()
+        setupSwipeRefresh()
     }
 
     /**
@@ -62,6 +67,12 @@ class HomeFragment : Fragment() {
         todayEventsAdapter = TodayEventsAdapter()
         binding.todayEventsList.apply {
             adapter = todayEventsAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+
+        futureEventsAdapter = FutureEventsAdapter()
+        binding.futureEventsList.apply {
+            adapter = futureEventsAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
     }
@@ -82,6 +93,15 @@ class HomeFragment : Fragment() {
                 }
                 else -> false
             }
+        }
+    }
+
+    /**
+     * Configure le SwipeRefreshLayout
+     */
+    private fun setupSwipeRefresh() {
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.refreshData()
         }
     }
 
@@ -107,6 +127,13 @@ class HomeFragment : Fragment() {
             // Navigation
             viewModel.navigationEvent.collect { event ->
                 handleNavigationEvent(event)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            // État de chargement
+            viewModel.isLoading.collect { isLoading ->
+                binding.swipeRefresh.isRefreshing = isLoading
             }
         }
 
@@ -154,10 +181,17 @@ class HomeFragment : Fragment() {
         }
 
         // Événements futurs
-        if (state.hasFutureEvents()) {
+        if (state.hasCalendarWidget) {
             binding.futureEventsSection.visibility = View.VISIBLE
-            // TODO: Adapter pour afficher les événements futurs groupés
+            if (state.hasFutureEvents()) {
+                binding.futureEventsTitle.text = "Événements à venir (${state.futureEvents.size})"
+                futureEventsAdapter.submitEventsList(state.futureEvents)
+            } else {
+                binding.futureEventsTitle.text = "Aucun événement à venir"
+                futureEventsAdapter.submitEventsList(emptyList())
+            }
         } else {
+            // Pas de widget calendrier
             binding.futureEventsSection.visibility = View.GONE
         }
     }
@@ -202,7 +236,9 @@ class HomeFragment : Fragment() {
      */
     private fun showError(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
-            .setAction("OK") { }
+            .setAction("Réessayer") {
+                viewModel.refreshData()
+            }
             .show()
     }
 
@@ -211,6 +247,12 @@ class HomeFragment : Fragment() {
      */
     private fun showMessage(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Rafraîchir les données quand on revient sur la page
+        viewModel.refreshData()
     }
 
     override fun onDestroyView() {

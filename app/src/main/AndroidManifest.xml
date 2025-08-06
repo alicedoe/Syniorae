@@ -24,6 +24,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".services.CalendarSyncService"
+            android:enabled="true"
+            android:exported="false" />
+
         <!-- Activité pour le tunnel de configuration du calendrier -->
         <activity
             android:name=".presentation.activities.CalendarConfigurationActivity"
