@@ -2,10 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions pour l'API Google Calendar -->
+    <!-- Permissions réseau pour la synchronisation Google Calendar -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Permissions pour les alarmes de synchronisation automatique -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:targetApi="31" />
+
+    <!-- Permission pour les services de premier plan (synchronisation) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Permissions pour les comptes Google (si implémentation complète) -->
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
 
     <application
         android:name=".SyniOraeApplication"
@@ -17,9 +29,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Syniorae"
-        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
 
+        <!-- Activité principale -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,17 +42,53 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".services.CalendarSyncService"
-            android:enabled="true"
-            android:exported="false" />
-
         <!-- Activité pour le tunnel de configuration du calendrier -->
         <activity
             android:name=".presentation.activities.CalendarConfigurationActivity"
             android:exported="false"
             android:theme="@style/Theme.Syniorae"
             android:parentActivityName=".MainActivity" />
+
+        <!-- Service de synchronisation du calendrier -->
+        <service
+            android:name=".services.CalendarSyncService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Récepteur pour les alarmes de synchronisation -->
+        <receiver
+            android:name=".services.SyncReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.syniorae.SYNC_CALENDAR" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Récepteur pour le redémarrage du système -->
+        <receiver
+            android:name=".services.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Provider pour les données exportées (futur) -->
+        <provider
+            android:name=".data.providers.SyniOraeContentProvider"
+            android:authorities="com.syniorae.provider"
+            android:enabled="false"
+            android:exported="false" />
+
+        <!-- Configuration de sauvegarde automatique -->
+        <meta-data
+            android:name="com.google.android.backup.api_key"
+            android:value="AEdPqrEAAAAI7O2I8N0_dJQzBON" />
 
     </application>
 
