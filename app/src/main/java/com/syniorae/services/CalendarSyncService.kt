@@ -12,7 +12,6 @@ import kotlinx.coroutines.*
 
 /**
  * Service pour la synchronisation automatique du calendrier en arrière-plan
- * ✅ Version sans fuite mémoire - Context utilisé localement
  */
 class CalendarSyncService : Service() {
 
@@ -33,9 +32,17 @@ class CalendarSyncService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var syncJob: Job? = null
 
+    private lateinit var syncCalendarUseCase: SyncCalendarUseCase
+
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service créé")
+
+        // Initialiser le use case
+        syncCalendarUseCase = SyncCalendarUseCase(
+            calendarRepository = DependencyInjection.getCalendarRepository(),
+            widgetRepository = DependencyInjection.getWidgetRepository()
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -61,7 +68,6 @@ class CalendarSyncService : Service() {
 
     /**
      * Démarre la synchronisation périodique
-     * ✅ Crée les dépendances localement sans stockage
      */
     private fun startPeriodicSync() {
         syncJob?.cancel()
@@ -69,12 +75,6 @@ class CalendarSyncService : Service() {
         syncJob = serviceScope.launch {
             while (isActive) {
                 try {
-                    // ✅ Créer le use case localement avec applicationContext
-                    val syncCalendarUseCase = SyncCalendarUseCase(
-                        calendarRepository = DependencyInjection.getCalendarRepository(applicationContext),
-                        widgetRepository = DependencyInjection.getWidgetRepository(applicationContext)
-                    )
-
                     // Vérifier si une sync est nécessaire
                     if (syncCalendarUseCase.isSyncNeeded()) {
                         Log.d(TAG, "Synchronisation nécessaire, lancement...")
@@ -104,17 +104,11 @@ class CalendarSyncService : Service() {
 
     /**
      * Force une synchronisation immédiate
-     * ✅ Crée les dépendances localement
      */
     fun forceSyncNow() {
         serviceScope.launch {
             try {
                 Log.d(TAG, "Synchronisation forcée demandée")
-
-                val syncCalendarUseCase = SyncCalendarUseCase(
-                    calendarRepository = DependencyInjection.getCalendarRepository(applicationContext),
-                    widgetRepository = DependencyInjection.getWidgetRepository(applicationContext)
-                )
 
                 when (val result = syncCalendarUseCase.syncWithRetry()) {
                     is SyncResult.Success -> {

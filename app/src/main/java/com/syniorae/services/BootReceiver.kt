@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Récepteur pour redémarrer les services après un reboot du système
- * ✅ Version sans fuite mémoire - Context utilisé localement
+ * Assure la continuité de la synchronisation automatique
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -40,16 +40,17 @@ class BootReceiver : BroadcastReceiver() {
 
     /**
      * Redémarre les services nécessaires après un reboot
-     * ✅ Utilise le Context localement sans stockage
      */
     private fun restartServices(context: Context) {
         receiverScope.launch {
             try {
                 Log.d(TAG, "Redémarrage des services après reboot")
 
-                // ✅ Créer les dépendances localement avec applicationContext
-                val widgetRepository = DependencyInjection.getWidgetRepository(context.applicationContext)
-                val preferencesManager = com.syniorae.core.utils.PreferencesManager.getInstance(context.applicationContext)
+                // Initialiser l'injection de dépendances
+                DependencyInjection.initialize(context.applicationContext)
+
+                val widgetRepository = DependencyInjection.getWidgetRepository()
+                val preferencesManager = com.syniorae.core.utils.PreferencesManager.getInstance(context)
 
                 // Vérifier si des widgets sont actifs
                 val activeWidgets = widgetRepository.getActiveWidgets()
@@ -57,7 +58,7 @@ class BootReceiver : BroadcastReceiver() {
 
                 if (activeWidgets.isNotEmpty()) {
                     // Redémarrer le service de synchronisation
-                    CalendarSyncService.start(context.applicationContext)
+                    CalendarSyncService.start(context)
                     Log.d(TAG, "Service de synchronisation redémarré")
 
                     // Reprogrammer les alarmes de synchronisation pour chaque widget actif
@@ -65,7 +66,7 @@ class BootReceiver : BroadcastReceiver() {
                         when (widget.type) {
                             WidgetType.CALENDAR -> {
                                 val syncFrequency = preferencesManager.syncFrequencyHours
-                                SyncScheduler.scheduleSyncAlarm(context.applicationContext, syncFrequency)
+                                SyncScheduler.scheduleSyncAlarm(context, syncFrequency)
                                 Log.d(TAG, "Alarme de synchronisation calendrier reprogrammée (${syncFrequency}h)")
                             }
                             else -> {

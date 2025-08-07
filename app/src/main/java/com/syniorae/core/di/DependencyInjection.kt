@@ -69,15 +69,15 @@ object DependencyInjection {
     /**
      * Récupère le GoogleAuthManager (créé à chaque fois car il a besoin du Context)
      */
-    fun getGoogleAuthManager(context: Context): com.syniorae.data.remote.google.GoogleAuthManager {
-        return com.syniorae.data.remote.google.GoogleAuthManager(context)
+    fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
+        return com.syniorae.data.remote.google.GoogleAuthManager()
     }
 
     /**
      * Récupère le GoogleCalendarApi
      */
-    fun getGoogleCalendarApi(context: Context): com.syniorae.data.remote.google.GoogleCalendarApi {
-        return com.syniorae.data.remote.google.GoogleCalendarApi(getGoogleAuthManager(context))
+    fun getGoogleCalendarApi(): com.syniorae.data.remote.google.GoogleCalendarApi {
+        return com.syniorae.data.remote.google.GoogleCalendarApi(getGoogleAuthManager())
     }
 
     /**

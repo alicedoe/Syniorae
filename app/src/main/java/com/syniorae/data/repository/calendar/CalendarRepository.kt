@@ -16,7 +16,7 @@ class CalendarRepository(
     private val jsonFileManager: JsonFileManager
 ) {
 
-    // API Google Calendar sera injectée plus tard
+    // API Google Calendar sera injectée via DI
     private val googleCalendarApi by lazy {
         com.syniorae.core.di.DependencyInjection.getGoogleCalendarApi()
     }

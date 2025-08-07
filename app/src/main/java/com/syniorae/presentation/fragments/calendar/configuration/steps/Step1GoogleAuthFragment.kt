@@ -107,7 +107,7 @@ class Step1GoogleAuthFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val authManager = com.syniorae.core.di.DependencyInjection.getGoogleAuthManager(requireContext())
+                val authManager = com.syniorae.core.di.DependencyInjection.getGoogleAuthManager()
 
                 // Tenter la connexion Google
                 when (val result = authManager.signIn()) {

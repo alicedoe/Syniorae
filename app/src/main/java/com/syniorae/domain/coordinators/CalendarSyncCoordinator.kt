@@ -3,19 +3,19 @@ package com.syniorae.domain.coordinators
 import android.content.Context
 import android.util.Log
 import com.syniorae.core.di.DependencyInjection
-import com.syniorae.data.local.json.JsonFileType
-import com.syniorae.data.local.json.models.*
-import com.syniorae.data.remote.google.GoogleCalendarResponseParser
-import com.syniorae.domain.models.sync.*
+import com.syniorae.data.repository.calendar.SyncResult
 import com.syniorae.domain.models.widgets.WidgetType
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.time.LocalDateTime
+import com.syniorae.services.CalendarSyncService
+import com.syniorae.services.SyncScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 
 /**
- * Coordinateur principal pour la synchronisation du calendrier
- * Orchestre toutes les opérations de sync entre Google Calendar et les fichiers JSON
+ * Coordinateur pour orchestrer la synchronisation du calendrier
+ * Gère les services, alarmes et états de synchronisation
  */
 class CalendarSyncCoordinator(private val context: Context) {
 
@@ -23,327 +23,170 @@ class CalendarSyncCoordinator(private val context: Context) {
         private const val TAG = "CalendarSyncCoordinator"
     }
 
-    // Composants injectés
-    private val jsonFileManager = DependencyInjection.getJsonFileManager()
-    private val googleAuthManager = DependencyInjection.getGoogleAuthManager()
-    private val googleCalendarApi = DependencyInjection.getGoogleCalendarApi()
+    private val coordinatorScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    // État de synchronisation en temps réel
-    private val _syncState = MutableStateFlow(
-        SyncState(
-            status = SyncStatus.NEVER_SYNCED,
-            lastSyncTime = null,
-            nextSyncTime = null
-        )
-    )
-    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+    private val widgetRepository by lazy { DependencyInjection.getWidgetRepository() }
+    private val calendarRepository by lazy { DependencyInjection.getCalendarRepository() }
+    private val preferencesManager by lazy {
+        com.syniorae.core.utils.PreferencesManager.getInstance(context)
+    }
 
     /**
-     * Lance une synchronisation complète
+     * Active la synchronisation automatique du calendrier
      */
-    suspend fun performFullSync(): SyncResult {
-        val startTime = System.currentTimeMillis()
-        Log.d(TAG, "Début de synchronisation complète")
+    fun enableAutoSync() {
+        coordinatorScope.launch {
+            try {
+                val calendarWidget = widgetRepository.getWidget(WidgetType.CALENDAR)
 
-        // Mettre à jour l'état
-        _syncState.value = _syncState.value.copy(
-            status = SyncStatus.IN_PROGRESS,
-            retryCount = 0
-        )
+                if (calendarWidget?.isActive() == true) {
+                    // Démarrer le service de synchronisation
+                    CalendarSyncService.start(context)
 
-        return try {
-            // 1. Vérifier la configuration
-            val config = loadConfiguration()
-                ?: return createErrorResult("Configuration manquante", startTime)
+                    // Programmer les alarmes de synchronisation
+                    val syncFrequency = preferencesManager.syncFrequencyHours
+                    SyncScheduler.scheduleSyncAlarm(context, syncFrequency)
 
-            // 2. Vérifier l'authentification Google
-            if (!googleAuthManager.isSignedIn()) {
-                return createErrorResult("Utilisateur non connecté", startTime)
+                    Log.d(TAG, "Synchronisation automatique activée (${syncFrequency}h)")
+                } else {
+                    Log.w(TAG, "Impossible d'activer la sync : widget calendrier inactif")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Erreur lors de l'activation de la synchronisation", e)
             }
+        }
+    }
 
-            // 3. Récupérer les événements depuis Google Calendar
-            val events = fetchEventsFromGoogle(config)
-                ?: return createErrorResult("Impossible de récupérer les événements", startTime)
+    /**
+     * Désactive la synchronisation automatique
+     */
+    fun disableAutoSync() {
+        try {
+            // Arrêter le service
+            CalendarSyncService.stop(context)
 
-            // 4. Traiter et enrichir les événements
-            val processedEvents = processEvents(events)
+            // Annuler les alarmes
+            SyncScheduler.cancelSyncAlarm(context)
 
-            // 5. Sauvegarder dans le fichier JSON
-            val saveSuccess = saveEventsToJson(processedEvents, config)
-            if (!saveSuccess) {
-                return createErrorResult("Échec de la sauvegarde", startTime)
-            }
-
-            // 6. Mettre à jour l'état et programmer la prochaine sync
-            val duration = System.currentTimeMillis() - startTime
-            updateSyncSuccess(processedEvents.size, duration, config.frequence_synchro)
-
-            Log.d(TAG, "Synchronisation réussie - ${processedEvents.size} événements")
-            SyncResult.success(processedEvents.size, duration)
-
+            Log.d(TAG, "Synchronisation automatique désactivée")
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de la synchronisation", e)
-            val duration = System.currentTimeMillis() - startTime
-            updateSyncError(e.message ?: "Erreur inconnue")
-            SyncResult.error(e.message ?: "Erreur inconnue", null, duration)
+            Log.e(TAG, "Erreur lors de la désactivation de la synchronisation", e)
         }
     }
 
     /**
-     * Synchronisation avec retry automatique
+     * Force une synchronisation immédiate
      */
-    suspend fun performSyncWithRetry(maxRetries: Int = 3): SyncResult {
-        var lastResult: SyncResult? = null
+    fun forceSyncNow(onResult: ((SyncResult) -> Unit)? = null) {
+        coordinatorScope.launch {
+            try {
+                Log.d(TAG, "Synchronisation forcée demandée")
 
-        for (attempt in 1..maxRetries) {
-            Log.d(TAG, "Tentative de synchronisation $attempt/$maxRetries")
+                val result = calendarRepository.forceSyncWithRetry()
 
-            _syncState.value = _syncState.value.copy(retryCount = attempt - 1)
+                when (result) {
+                    is SyncResult.Success -> {
+                        Log.d(TAG, "Synchronisation forcée réussie - ${result.eventsCount} événements")
+                        preferencesManager.recordSuccessfulSync()
+                    }
+                    is SyncResult.Error -> {
+                        Log.w(TAG, "Échec de la synchronisation forcée: ${result.message}")
+                    }
+                }
 
-            lastResult = performFullSync()
+                onResult?.invoke(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erreur lors de la synchronisation forcée", e)
+                onResult?.invoke(SyncResult.Error("Erreur inattendue: ${e.message}"))
+            }
+        }
+    }
 
-            if (lastResult.isSuccess) {
-                return lastResult
+    /**
+     * Met à jour la fréquence de synchronisation
+     */
+    fun updateSyncFrequency(newFrequencyHours: Int) {
+        coordinatorScope.launch {
+            try {
+                // Mettre à jour les préférences
+                preferencesManager.syncFrequencyHours = newFrequencyHours
+
+                // Reprogrammer les alarmes avec la nouvelle fréquence
+                val calendarWidget = widgetRepository.getWidget(WidgetType.CALENDAR)
+                if (calendarWidget?.isActive() == true) {
+                    SyncScheduler.cancelSyncAlarm(context)
+                    SyncScheduler.scheduleSyncAlarm(context, newFrequencyHours)
+
+                    Log.d(TAG, "Fréquence de synchronisation mise à jour : ${newFrequencyHours}h")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Erreur lors de la mise à jour de la fréquence", e)
+            }
+        }
+    }
+
+    /**
+     * Vérifie l'état de la synchronisation
+     */
+    suspend fun getSyncStatus(): SyncStatus {
+        return try {
+            val calendarWidget = widgetRepository.getWidget(WidgetType.CALENDAR)
+
+            if (calendarWidget?.isActive() != true) {
+                return SyncStatus.Disabled
             }
 
-            // Attendre avant la prochaine tentative (sauf pour la dernière)
-            if (attempt < maxRetries) {
-                val delayMs = calculateRetryDelay(attempt)
-                Log.d(TAG, "Attente de ${delayMs}ms avant retry")
-                kotlinx.coroutines.delay(delayMs)
+            val hasRecentSync = calendarRepository.hasRecentSync()
+            val timeSinceLastSync = preferencesManager.getTimeSinceLastSync()
+
+            when {
+                hasRecentSync -> SyncStatus.UpToDate(timeSinceLastSync)
+                preferencesManager.lastSyncTime == 0L -> SyncStatus.NeverSynced
+                else -> SyncStatus.OutOfDate(timeSinceLastSync)
             }
-        }
-
-        return lastResult ?: SyncResult.error("Toutes les tentatives ont échoué")
-    }
-
-    /**
-     * Charge la configuration du calendrier
-     */
-    private suspend fun loadConfiguration(): ConfigurationJsonModel? {
-        return try {
-            jsonFileManager.readJsonFile(
-                WidgetType.CALENDAR,
-                JsonFileType.CONFIG,
-                ConfigurationJsonModel::class.java
-            )
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur chargement configuration", e)
-            null
+            Log.e(TAG, "Erreur lors de la vérification du statut", e)
+            SyncStatus.Error(e.message ?: "Erreur inconnue")
         }
     }
 
     /**
-     * Récupère les événements depuis Google Calendar
+     * Teste la connectivité avec l'API Google Calendar
      */
-    private suspend fun fetchEventsFromGoogle(config: ConfigurationJsonModel): List<EventJsonModel>? {
+    suspend fun testApiConnection(): Boolean {
         return try {
-            Log.d(TAG, "Récupération événements pour calendrier ${config.calendrier_id}")
-
-            googleCalendarApi.getCalendarEvents(
-                calendarId = config.calendrier_id,
-                maxResults = config.nb_evenements_max,
-                weeksAhead = config.nb_semaines_max
-            )
+            calendarRepository.testApiConnection()
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur récupération événements Google", e)
-            null
-        }
-    }
-
-    /**
-     * Traite et enrichit les événements récupérés
-     */
-    private fun processEvents(events: List<EventJsonModel>): List<EventJsonModel> {
-        val now = LocalDateTime.now()
-
-        return events.map { event ->
-            event.copy(
-                // Marquer les événements en cours
-                en_cours = event.isCurrentlyRunning(),
-                // Nettoyer et normaliser les titres
-                titre = event.titre.trim().takeIf { it.isNotBlank() } ?: "Événement sans titre"
-            )
-        }.filter { event ->
-            // Filtrer les événements trop anciens (plus de 1 jour dans le passé)
-            event.date_fin.isAfter(now.minusDays(1))
-        }.sortedBy { it.date_debut }
-    }
-
-    /**
-     * Sauvegarde les événements dans le fichier JSON
-     */
-    private suspend fun saveEventsToJson(
-        events: List<EventJsonModel>,
-        config: ConfigurationJsonModel
-    ): Boolean {
-        return try {
-            val eventsModel = EventsJsonModel(
-                derniere_synchro = LocalDateTime.now(),
-                statut = "success",
-                nb_evenements_recuperes = events.size,
-                evenements = events
-            )
-
-            jsonFileManager.writeJsonFile(
-                WidgetType.CALENDAR,
-                JsonFileType.DATA,
-                eventsModel
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur sauvegarde événements", e)
+            Log.e(TAG, "Erreur lors du test de connexion", e)
             false
         }
     }
 
     /**
-     * Met à jour l'état après un succès
+     * Nettoie les ressources du coordinateur
      */
-    private fun updateSyncSuccess(eventsCount: Int, durationMs: Long, frequencyHours: Int) {
-        val now = LocalDateTime.now()
-        _syncState.value = SyncState(
-            status = SyncStatus.SUCCESS,
-            lastSyncTime = now,
-            nextSyncTime = now.plusHours(frequencyHours.toLong()),
-            eventsCount = eventsCount,
-            syncDurationMs = durationMs,
-            retryCount = 0
-        )
+    fun cleanup() {
+        coordinatorScope.cancel()
     }
+}
 
-    /**
-     * Met à jour l'état après une erreur
-     */
-    private fun updateSyncError(errorMessage: String) {
-        _syncState.value = _syncState.value.copy(
-            status = SyncStatus.ERROR,
-            errorMessage = errorMessage,
-            retryCount = _syncState.value.retryCount + 1
-        )
-    }
+/**
+ * États possibles de la synchronisation
+ */
+sealed class SyncStatus {
+    object Disabled : SyncStatus()
+    object NeverSynced : SyncStatus()
+    data class UpToDate(val lastSyncTime: String) : SyncStatus()
+    data class OutOfDate(val lastSyncTime: String) : SyncStatus()
+    data class Error(val message: String) : SyncStatus()
 
-    /**
-     * Calcule le délai de retry avec backoff exponentiel
-     */
-    private fun calculateRetryDelay(attemptNumber: Int): Long {
-        val baseDelayMs = 5 * 60 * 1000L // 5 minutes
-        return baseDelayMs * (1 shl (attemptNumber - 1)) // 2^(attempt-1)
-    }
-
-    /**
-     * Crée un résultat d'erreur
-     */
-    private fun createErrorResult(message: String, startTime: Long): SyncResult {
-        val duration = System.currentTimeMillis() - startTime
-        updateSyncError(message)
-        return SyncResult.error(message, null, duration)
-    }
-
-    /**
-     * Vérifie si une synchronisation récente existe
-     */
-    suspend fun hasRecentSync(maxAgeHours: Int = 4): Boolean {
-        return try {
-            val eventsData = jsonFileManager.readJsonFile(
-                WidgetType.CALENDAR,
-                JsonFileType.DATA,
-                EventsJsonModel::class.java
-            ) ?: return false
-
-            val lastSync = eventsData.derniere_synchro ?: return false
-            val cutoff = LocalDateTime.now().minusHours(maxAgeHours.toLong())
-
-            lastSync.isAfter(cutoff)
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur vérification sync récente", e)
-            false
-        }
-    }
-
-    /**
-     * Force l'annulation d'une synchronisation en cours
-     */
-    fun cancelSync() {
-        if (_syncState.value.isInProgress()) {
-            _syncState.value = _syncState.value.copy(
-                status = SyncStatus.CANCELLED
-            )
-            Log.d(TAG, "Synchronisation annulée")
-        }
-    }
-
-    /**
-     * Programme la prochaine synchronisation
-     */
-    fun scheduleNextSync(delayHours: Int) {
-        val nextSync = LocalDateTime.now().plusHours(delayHours.toLong())
-        _syncState.value = _syncState.value.copy(
-            status = SyncStatus.SCHEDULED,
-            nextSyncTime = nextSync
-        )
-
-        // Programmer l'alarme système
-        com.syniorae.services.SyncScheduler.scheduleSyncAlarm(context, delayHours)
-        Log.d(TAG, "Prochaine synchronisation programmée: $nextSync")
-    }
-
-    /**
-     * Annule la synchronisation programmée
-     */
-    fun cancelScheduledSync() {
-        com.syniorae.services.SyncScheduler.cancelSyncAlarm(context)
-        _syncState.value = _syncState.value.copy(
-            status = SyncStatus.SUCCESS,
-            nextSyncTime = null
-        )
-        Log.d(TAG, "Synchronisation programmée annulée")
-    }
-
-    /**
-     * Nettoie les anciennes données de synchronisation
-     */
-    suspend fun cleanup(): Boolean {
-        return try {
-            jsonFileManager.cleanup()
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors du nettoyage", e)
-            false
-        }
-    }
-
-    /**
-     * Exporte les statistiques de synchronisation
-     */
-    suspend fun exportSyncStatistics(): SyncStatistics {
-        return try {
-            // TODO: Implémenter la collecte de statistiques depuis les logs ou fichiers
-            SyncStatistics(
-                totalSyncs = 0,
-                successfulSyncs = 0,
-                failedSyncs = 0,
-                totalEventsRetrieved = _syncState.value.eventsCount,
-                averageDurationMs = _syncState.value.syncDurationMs
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur export statistiques", e)
-            SyncStatistics()
-        }
-    }
-
-    /**
-     * Teste la connectivité avec Google Calendar
-     */
-    suspend fun testConnectivity(): Boolean {
-        return try {
-            if (!googleAuthManager.isSignedIn()) {
-                Log.d(TAG, "Utilisateur non connecté")
-                return false
-            }
-
-            googleCalendarApi.checkApiAccess()
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur test connectivité", e)
-            false
+    fun getDisplayMessage(): String {
+        return when (this) {
+            is Disabled -> "Synchronisation désactivée"
+            is NeverSynced -> "Jamais synchronisé"
+            is UpToDate -> "À jour ($lastSyncTime)"
+            is OutOfDate -> "Mise à jour nécessaire ($lastSyncTime)"
+            is Error -> "Erreur : $message"
         }
     }
 }

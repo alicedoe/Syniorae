@@ -95,7 +95,7 @@ class Step2CalendarSelectionFragment : Fragment() {
             try {
                 binding.calendarsRecyclerView.visibility = View.GONE
                 // TODO: Ajouter un indicateur de chargement
-                val googleCalendarApi = com.syniorae.core.di.DependencyInjection.getGoogleCalendarApi(requireContext())
+                val googleCalendarApi = com.syniorae.core.di.DependencyInjection.getGoogleCalendarApi()
                 val googleCalendars = googleCalendarApi.getCalendarList()
 
                 // Convertir les calendriers Google en CalendarItem

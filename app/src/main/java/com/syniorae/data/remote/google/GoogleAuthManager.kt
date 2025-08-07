@@ -1,9 +1,5 @@
 package com.syniorae.data.remote.google
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import androidx.activity.result.ActivityResultLauncher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Manager pour l'authentification Google
  * Gère la connexion, les tokens et les permissions
  */
-class GoogleAuthManager(private val context: Context) {
+class GoogleAuthManager {
 
     // État de l'authentification
     private val _authState = MutableStateFlow(GoogleAuthState())

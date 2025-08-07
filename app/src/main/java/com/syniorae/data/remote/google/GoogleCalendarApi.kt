@@ -1,6 +1,3 @@
-// FICHIER : app/src/main/java/com/syniorae/data/remote/google/GoogleCalendarApi.kt
-// ACTION : CRÉER ce fichier
-
 package com.syniorae.data.remote.google
 
 import com.syniorae.data.local.json.models.EventJsonModel

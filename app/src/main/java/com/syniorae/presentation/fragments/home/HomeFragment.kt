@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Fragment de la page d'accueil (Page 1)
- * ✅ Version sans fuite mémoire
+ * Version complète avec données JSON
  */
 class HomeFragment : Fragment() {
 
@@ -30,9 +30,9 @@ class HomeFragment : Fragment() {
     private lateinit var todayEventsAdapter: TodayEventsAdapter
     private lateinit var futureEventsAdapter: FutureEventsAdapter
 
-    // ✅ ViewModel avec factory qui prend le Context
+    // ViewModel avec factory pour injection de dépendances - CORRIGÉ
     private val viewModel: HomeViewModel by viewModels {
-        HomeViewModelFactory(requireContext().applicationContext)
+        HomeViewModelFactory()
     }
 
     override fun onCreateView(
@@ -51,12 +51,18 @@ class HomeFragment : Fragment() {
         observeViewModel()
     }
 
+    /**
+     * Configure l'interface utilisateur
+     */
     private fun setupUI() {
         setupSettingsIcon()
         setupAdapters()
         setupSwipeRefresh()
     }
 
+    /**
+     * Configure les adaptateurs RecyclerView
+     */
     private fun setupAdapters() {
         todayEventsAdapter = TodayEventsAdapter()
         binding.todayEventsList.apply {
@@ -71,6 +77,9 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Configure l'icône paramètre avec appui long
+     */
     private fun setupSettingsIcon() {
         binding.settingsIcon.setOnTouchListener { _, event ->
             when (event.action) {
@@ -87,50 +96,65 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Configure le SwipeRefreshLayout
+     */
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.setOnRefreshListener {
             viewModel.refreshData()
         }
     }
 
+    /**
+     * Observe les changements du ViewModel
+     */
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
+            // État de la vue
             viewModel.viewState.collect { state ->
                 updateUI(state)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            // Progression de l'appui long
             viewModel.longPressProgress.collect { progress ->
                 updateLongPressProgress(progress)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            // Navigation
             viewModel.navigationEvent.collect { event ->
                 handleNavigationEvent(event)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            // État de chargement
             viewModel.isLoading.collect { isLoading ->
                 binding.swipeRefresh.isRefreshing = isLoading
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            // Erreurs
             viewModel.error.collect { error ->
                 showError(error)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            // Messages
             viewModel.message.collect { message ->
                 showMessage(message)
             }
         }
     }
 
+    /**
+     * Met à jour l'interface utilisateur selon l'état
+     */
     private fun updateUI(state: HomeViewState) {
         // Date
         binding.dayOfWeek.text = state.dayOfWeek
@@ -140,15 +164,18 @@ class HomeFragment : Fragment() {
         // Colonne droite
         if (state.hasCalendarWidget) {
             if (state.hasTodayEvents()) {
+                // Afficher les événements du jour
                 binding.rightColumnMessage.visibility = View.GONE
                 binding.todayEventsList.visibility = View.VISIBLE
                 todayEventsAdapter.submitList(state.todayEvents)
             } else {
+                // Afficher le message "Aucun événement"
                 binding.rightColumnMessage.visibility = View.VISIBLE
                 binding.todayEventsList.visibility = View.GONE
                 binding.rightColumnMessage.text = state.getRightColumnMessage()
             }
         } else {
+            // Pas de widget calendrier activé - colonnes vides
             binding.rightColumnMessage.visibility = View.GONE
             binding.todayEventsList.visibility = View.GONE
         }
@@ -164,22 +191,33 @@ class HomeFragment : Fragment() {
                 futureEventsAdapter.submitEventsList(emptyList())
             }
         } else {
+            // Pas de widget calendrier
             binding.futureEventsSection.visibility = View.GONE
         }
     }
 
+    /**
+     * Met à jour la progression de l'appui long
+     */
     private fun updateLongPressProgress(progress: Float) {
         if (progress > 0f) {
+            // Afficher et animer le cercle de progression
             binding.progressCircle.visibility = View.VISIBLE
             binding.progressCircle.setProgress(progress)
+
+            // Légère transparence de l'icône pendant l'appui
             binding.settingsIcon.alpha = 0.7f
         } else {
+            // Masquer le cercle et remettre l'icône normale
             binding.progressCircle.visibility = View.INVISIBLE
             binding.progressCircle.reset()
             binding.settingsIcon.alpha = 1f
         }
     }
 
+    /**
+     * Gère les événements de navigation
+     */
     private fun handleNavigationEvent(event: NavigationEvent) {
         when (event) {
             is NavigationEvent.NavigateToConfiguration -> {
@@ -193,6 +231,9 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Affiche un message d'erreur
+     */
     private fun showError(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
             .setAction("Réessayer") {
@@ -201,12 +242,16 @@ class HomeFragment : Fragment() {
             .show()
     }
 
+    /**
+     * Affiche un message d'information
+     */
     private fun showMessage(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
     override fun onResume() {
         super.onResume()
+        // Rafraîchir les données quand on revient sur la page
         viewModel.refreshData()
     }
 
