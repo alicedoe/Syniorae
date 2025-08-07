@@ -22,6 +22,13 @@ object DependencyInjection {
     private var _calendarRepository: com.syniorae.data.repository.calendar.CalendarRepository? = null
 
     /**
+     * Vérifie si l'injection de dépendances est initialisée
+     */
+    fun isInitialized(): Boolean {
+        return _dataDirectoryPath != null && _backupDirectoryPath != null
+    }
+
+    /**
      * Initialise avec le contexte de l'application
      * Extrait les chemins puis libère la référence au Context
      */
@@ -67,7 +74,7 @@ object DependencyInjection {
     }
 
     /**
-     * Récupère le GoogleAuthManager (créé à chaque fois car il a besoin du Context)
+     * Récupère le GoogleAuthManager
      */
     fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
         return com.syniorae.data.remote.google.GoogleAuthManager()

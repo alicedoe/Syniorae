@@ -80,4 +80,12 @@ dependencies {
 
     // SwipeRefreshLayout
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
+    // ========= DÉPENDANCES AJOUTÉES POUR CORRIGER LES ERREURS =========
+
+    // WorkManager pour la synchronisation en arrière-plan
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Security pour le stockage sécurisé des tokens OAuth
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }
