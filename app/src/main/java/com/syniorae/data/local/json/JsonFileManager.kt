@@ -8,31 +8,33 @@ import com.syniorae.domain.models.widgets.WidgetType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.IOException
 import java.time.LocalDateTime
 
 /**
  * Manager principal pour la gestion des fichiers JSON
  * Coordonne les opérations sur tous les widgets
+ * ✅ Version sans fuite mémoire
  */
-class JsonFileManager(private val context: Context) {
+class JsonFileManager(
+    private val dataDirectoryPath: String,
+    private val backupDirectoryPath: String
+) {
 
     private val gson: Gson = GsonBuilder()
         .setPrettyPrinting()
         .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
         .create()
 
-    private val storageManager = JsonStorageManager(context)
+    private val storageManager = JsonStorageManager(dataDirectoryPath)
     private val validator = JsonValidator()
-    private val backupManager = JsonBackupManager(context)
+    private val backupManager = JsonBackupManager(dataDirectoryPath, backupDirectoryPath)
 
     /**
      * Initialise le répertoire de stockage
      */
     suspend fun initialize(): Boolean = withContext(Dispatchers.IO) {
         try {
-            storageManager.ensureDirectoryExists()
-            true
+            storageManager.ensureDirectoryExists() && backupManager.initialize()
         } catch (e: Exception) {
             false
         }
@@ -74,7 +76,7 @@ class JsonFileManager(private val context: Context) {
 
             if (validator.isValidJson(jsonContent)) {
                 // Backup avant écriture
-                backupManager.backupFile(fileName)
+                backupManager.createSimpleBackup(fileName)
                 storageManager.writeFile(fileName, jsonContent)
             } else {
                 false
@@ -89,13 +91,7 @@ class JsonFileManager(private val context: Context) {
      */
     suspend fun deleteWidgetFiles(widgetType: WidgetType): Boolean = withContext(Dispatchers.IO) {
         try {
-            val configFile = getFileName(widgetType, JsonFileType.CONFIG)
-            val dataFile = getFileName(widgetType, JsonFileType.DATA)
-            val iconsFile = getFileName(widgetType, JsonFileType.ICONS)
-
-            listOf(configFile, dataFile, iconsFile).all { fileName ->
-                storageManager.deleteFile(fileName)
-            }
+            backupManager.deleteWidgetFiles(widgetType)
         } catch (e: Exception) {
             false
         }
@@ -106,8 +102,7 @@ class JsonFileManager(private val context: Context) {
      */
     suspend fun hasConfigurationFiles(widgetType: WidgetType): Boolean = withContext(Dispatchers.IO) {
         try {
-            val configFile = getFileName(widgetType, JsonFileType.CONFIG)
-            storageManager.fileExists(configFile)
+            backupManager.hasConfigurationFiles(widgetType)
         } catch (e: Exception) {
             false
         }
@@ -118,13 +113,7 @@ class JsonFileManager(private val context: Context) {
      */
     suspend fun restoreFromBackup(widgetType: WidgetType): Boolean = withContext(Dispatchers.IO) {
         try {
-            val configFile = getFileName(widgetType, JsonFileType.CONFIG)
-            val dataFile = getFileName(widgetType, JsonFileType.DATA)
-            val iconsFile = getFileName(widgetType, JsonFileType.ICONS)
-
-            listOf(configFile, dataFile, iconsFile).all { fileName ->
-                backupManager.restoreFile(fileName)
-            }
+            backupManager.restoreFromBackup(widgetType)
         } catch (e: Exception) {
             false
         }
@@ -147,7 +136,7 @@ class JsonFileManager(private val context: Context) {
      */
     suspend fun getTotalStorageSize(): Long = withContext(Dispatchers.IO) {
         try {
-            storageManager.getDirectorySize()
+            backupManager.getTotalStorageSize()
         } catch (e: Exception) {
             0L
         }
@@ -158,19 +147,9 @@ class JsonFileManager(private val context: Context) {
      */
     suspend fun cleanup(): Boolean = withContext(Dispatchers.IO) {
         try {
-            backupManager.cleanOldBackups()
-            true
+            backupManager.cleanup()
         } catch (e: Exception) {
             false
         }
     }
-}
-
-/**
- * Types de fichiers JSON
- */
-enum class JsonFileType {
-    CONFIG,     // Configuration du widget
-    DATA,       // Données du widget
-    ICONS       // Associations d'icônes
 }

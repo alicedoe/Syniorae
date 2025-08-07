@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Layout principal du widget calendrier -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_main_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <!-- En-tête avec date -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <!-- Date du jour -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/widget_day_of_week"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:text="Dimanche" />
+
+            <TextView
+                android:id="@+id/widget_day_of_month"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:text="3" />
+
+            <TextView
+                android:id="@+id/widget_month_year"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:text="août 2025" />
+
+        </LinearLayout>
+
+        <!-- Bouton refresh -->
+        <ImageButton
+            android:id="@+id/widget_refresh_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_sync_24"
+            android:tint="@android:color/white"
+            android:contentDescription="Actualiser" />
+
+    </LinearLayout>
+
+    <!-- Séparateur -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/white"
+        android:alpha="0.3"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Événements du jour -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Titre section événements -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aujourd'hui"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Message si pas d'événements -->
+        <TextView
+            android:id="@+id/widget_events_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aucun événement"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:alpha="0.7"
+            android:gravity="center"
+            android:visibility="gone" />
+
+        <!-- Liste des événements -->
+        <TextView
+            android:id="@+id/widget_events_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textColor="@android:color/white"
+            android:lineSpacingExtra="2dp"
+            android:visibility="gone" />
+
+        <!-- Indicateur d'événements supplémentaires -->
+        <TextView
+            android:id="@+id/widget_more_events"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            android:textColor="@android:color/white"
+            android:alpha="0.6"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Pied de page avec dernière mise à jour -->
+    <TextView
+        android:id="@+id/widget_last_update"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Maj: 14:30"
+        android:textSize="9sp"
+        android:textColor="@android:color/white"
+        android:alpha="0.5"
+        android:gravity="end"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>

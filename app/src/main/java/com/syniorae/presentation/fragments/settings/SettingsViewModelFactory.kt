@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 
 /**
  * Factory pour créer SettingsViewModel avec ses dépendances
+ * ✅ Version sans fuite mémoire - Pas de Context stocké
  */
 class SettingsViewModelFactory : ViewModelProvider.Factory {
 
@@ -19,7 +20,7 @@ class SettingsViewModelFactory : ViewModelProvider.Factory {
 
 /**
  * ViewModel pour la page des paramètres détaillés (Page 3)
- * Pour l'instant, page placeholder selon le cahier des charges
+ * ✅ Version sans fuite mémoire - Pas de dépendances avec Context
  */
 class SettingsViewModel : ViewModel() {
 

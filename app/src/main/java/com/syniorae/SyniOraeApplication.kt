@@ -10,14 +10,12 @@ import kotlinx.coroutines.launch
 
 /**
  * Classe Application principale de SyniOrae
- * Version complète avec initialisation des composants
+ * ✅ Version sans fuite mémoire - pas de stockage statique avec Context
  */
 class SyniOraeApplication : Application() {
 
     companion object {
         private const val TAG = "SyniOraeApp"
-        lateinit var instance: SyniOraeApplication
-            private set
     }
 
     // Scope pour les opérations d'initialisation
@@ -25,26 +23,26 @@ class SyniOraeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
 
         Log.d(TAG, "Application SyniOrae initialisée")
 
-        // Initialiser l'injection de dépendances
+        // ✅ Initialiser le DependencyInjection avec le Context
         DependencyInjection.initialize(applicationContext)
 
-        // Initialiser les composants de manière asynchrone
+        // ✅ Pas d'initialisation statique - juste initialiser les composants
         initializeComponents()
     }
 
     /**
      * Initialise les composants principaux de l'application
+     * ✅ Utilise le Context seulement lors de l'initialisation
      */
     private fun initializeComponents() {
         applicationScope.launch {
             try {
                 Log.d(TAG, "Initialisation des composants...")
 
-                // Initialiser le système JSON
+                // ✅ Récupérer les instances SANS paramètres
                 val jsonFileManager = DependencyInjection.getJsonFileManager()
                 val initialized = jsonFileManager.initialize()
 
@@ -54,7 +52,7 @@ class SyniOraeApplication : Application() {
                     Log.w(TAG, "Échec de l'initialisation du système JSON")
                 }
 
-                // Initialiser le repository des widgets
+                // ✅ Récupérer le repository SANS paramètres
                 val widgetRepository = DependencyInjection.getWidgetRepository()
                 Log.d(TAG, "WidgetRepository initialisé")
 
@@ -82,7 +80,7 @@ class SyniOraeApplication : Application() {
     override fun onTerminate() {
         super.onTerminate()
 
-        // Nettoyer les ressources
+        // ✅ Nettoyer les ressources localement
         applicationScope.launch {
             try {
                 val widgetRepository = DependencyInjection.getWidgetRepository()

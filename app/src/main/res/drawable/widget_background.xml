@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arrière-plan principal du widget -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Gradient bleu pour le widget -->
+    <gradient
+        android:startColor="#FF2196F3"
+        android:endColor="#FF1976D2"
+        android:angle="135"
+        android:type="linear" />
+
+    <!-- Coins arrondis -->
+    <corners android:radius="12dp" />
+
+    <!-- Bordure subtile -->
+    <stroke
+        android:width="1dp"
+        android:color="#FF1565C0" />
+
+    <!-- Ombre interne légère -->
+    <padding
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp" />
+
+</shape>

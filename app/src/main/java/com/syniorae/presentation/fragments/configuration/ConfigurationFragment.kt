@@ -19,16 +19,16 @@ import kotlinx.coroutines.launch
 
 /**
  * Fragment de la page de configuration des widgets (Page 2)
- * Version corrigée avec Activity Result API
+ * ✅ Version sans fuite mémoire
  */
 class ConfigurationFragment : Fragment() {
 
     private var _binding: FragmentConfigurationBinding? = null
     private val binding get() = _binding!!
 
-    // ViewModel avec factory pour injection de dépendances
+    // ✅ ViewModel avec factory qui prend le Context
     private val viewModel: ConfigurationViewModel by viewModels {
-        ConfigurationViewModelFactory()
+        ConfigurationViewModelFactory(requireContext().applicationContext)
     }
 
     // Activity Result Launcher pour remplacer startActivityForResult

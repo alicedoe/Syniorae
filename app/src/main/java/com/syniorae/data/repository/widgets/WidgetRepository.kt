@@ -10,24 +10,37 @@ import com.syniorae.domain.models.widgets.WidgetType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 
 /**
  * Repository principal pour la gestion des widgets
- * Version connectée avec JsonFileManager - CORRIGÉE
+ * ✅ Version sans fuite mémoire - ne stocke pas le Context
  */
 class WidgetRepository(
-    private val context: Context,
+    private val dataDirectoryPath: String,
     private val jsonFileManager: JsonFileManager
 ) {
 
-    private val sharedPrefs: SharedPreferences = context.getSharedPreferences(
-        "${AppConstants.SHARED_PREFS_NAME}_widgets",
-        Context.MODE_PRIVATE
-    )
+    // Stocker le chemin des SharedPreferences au lieu du Context
+    private val sharedPrefsFile: File = File(dataDirectoryPath).parentFile?.let {
+        File(it, "shared_prefs/${AppConstants.SHARED_PREFS_NAME}_widgets.xml")
+    } ?: throw IllegalStateException("Impossible de déterminer le chemin des SharedPreferences")
 
     // État des widgets en mémoire
     private val _widgets = MutableStateFlow(loadWidgetsFromPrefs())
     val widgets: Flow<List<Widget>> = _widgets.asStateFlow()
+
+    /**
+     * Initialise avec le contexte (appelé une seule fois)
+     */
+    fun initializeWithContext(context: Context) {
+        // Charger les widgets depuis les SharedPreferences
+        val sharedPrefs = context.getSharedPreferences(
+            "${AppConstants.SHARED_PREFS_NAME}_widgets",
+            Context.MODE_PRIVATE
+        )
+        _widgets.value = loadWidgetsFromSharedPrefs(sharedPrefs)
+    }
 
     /**
      * Récupère tous les widgets disponibles
@@ -61,14 +74,11 @@ class WidgetRepository(
      * Active un widget
      */
     suspend fun enableWidget(type: WidgetType): Boolean {
-        // Vérifier si le widget a sa configuration JSON
         val hasConfig = hasConfiguration(type)
 
         return if (hasConfig) {
-            // Configuration existante → Activer directement
             updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
         } else {
-            // Pas de configuration → Mode configuration
             updateWidgetStatus(type, WidgetStatus.CONFIGURING, isConfigured = false)
         }
     }
@@ -91,7 +101,6 @@ class WidgetRepository(
      * Marque un widget comme configuré et l'active
      */
     suspend fun markWidgetConfigured(type: WidgetType): Boolean {
-        // Vérifier que les fichiers JSON existent bien
         val hasConfig = hasConfiguration(type)
 
         return if (hasConfig) {
@@ -118,11 +127,9 @@ class WidgetRepository(
      */
     suspend fun deleteWidgetConfiguration(type: WidgetType): Boolean {
         return try {
-            // Supprimer les fichiers JSON
             val filesDeleted = jsonFileManager.deleteWidgetFiles(type)
 
             if (filesDeleted) {
-                // Remettre le widget à OFF
                 updateWidgetStatus(type, WidgetStatus.OFF, isConfigured = false)
             } else {
                 false
@@ -140,7 +147,6 @@ class WidgetRepository(
             val restored = jsonFileManager.restoreFromBackup(type)
 
             if (restored) {
-                // Vérifier que la restauration a fonctionné
                 val hasConfig = hasConfiguration(type)
                 if (hasConfig) {
                     updateWidgetStatus(type, WidgetStatus.ON, isConfigured = true)
@@ -178,7 +184,7 @@ class WidgetRepository(
                 )
 
                 _widgets.value = widgets
-                saveWidgetsToPrefs(widgets)
+                // TODO: Sauvegarder dans SharedPreferences si nécessaire
                 true
             } else {
                 false
@@ -192,10 +198,16 @@ class WidgetRepository(
      * Charge les widgets depuis les préférences
      */
     private fun loadWidgetsFromPrefs(): List<Widget> {
+        return Widget.getAvailableWidgets()
+    }
+
+    /**
+     * Charge les widgets depuis SharedPreferences
+     */
+    private fun loadWidgetsFromSharedPrefs(sharedPrefs: SharedPreferences): List<Widget> {
         return try {
             val availableWidgets = Widget.getAvailableWidgets().toMutableList()
 
-            // Charge les états sauvegardés
             availableWidgets.forEachIndexed { index, widget ->
                 val keyPrefix = "widget_${widget.type.name.lowercase()}"
                 val statusName = sharedPrefs.getString("${keyPrefix}_status", WidgetStatus.OFF.name)
@@ -219,27 +231,6 @@ class WidgetRepository(
             availableWidgets
         } catch (e: Exception) {
             Widget.getAvailableWidgets()
-        }
-    }
-
-    /**
-     * Sauvegarde les widgets dans les préférences
-     */
-    private fun saveWidgetsToPrefs(widgets: List<Widget>): Boolean {
-        return try {
-            with(sharedPrefs.edit()) {
-                widgets.forEach { widget ->
-                    val keyPrefix = "widget_${widget.type.name.lowercase()}"
-                    putString("${keyPrefix}_status", widget.status.name)
-                    putBoolean("${keyPrefix}_configured", widget.isConfigured)
-                    putLong("${keyPrefix}_last_update", widget.lastUpdate)
-                    putString("${keyPrefix}_error", widget.errorMessage)
-                }
-                apply()
-            }
-            true
-        } catch (e: Exception) {
-            false
         }
     }
 

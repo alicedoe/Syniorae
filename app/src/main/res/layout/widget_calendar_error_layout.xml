@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Layout d'erreur du widget calendrier -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_error_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background_error"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <!-- Icône d'erreur -->
+    <ImageView
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_error_24"
+        android:tint="@android:color/white"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Titre d'erreur -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Erreur Widget"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Message d'erreur -->
+    <TextView
+        android:id="@+id/widget_error_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Impossible de charger les événements"
+        android:textSize="11sp"
+        android:textColor="@android:color/white"
+        android:alpha="0.8"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Instruction -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Touchez pour ouvrir l'app"
+        android:textSize="9sp"
+        android:textColor="@android:color/white"
+        android:alpha="0.6"
+        android:gravity="center" />
+
+</LinearLayout>

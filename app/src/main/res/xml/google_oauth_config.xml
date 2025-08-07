@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Configuration OAuth 2.0 pour Google Calendar API -->
+
+    <!-- Client ID pour l'authentification Google -->
+    <!-- À remplacer par le vrai client ID depuis Google Cloud Console -->
+    <string name="google_oauth_client_id">YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
+
+    <!-- Client secret (pour les applications confidentielles uniquement) -->
+    <!-- Généralement pas utilisé pour les apps Android -->
+    <string name="google_oauth_client_secret">YOUR_CLIENT_SECRET</string>
+
+    <!-- Scopes requis pour l'API Google Calendar -->
+    <string-array name="google_calendar_scopes">
+        <item>https://www.googleapis.com/auth/calendar.readonly</item>
+        <item>https://www.googleapis.com/auth/calendar.events.readonly</item>
+        <item>https://www.googleapis.com/auth/userinfo.email</item>
+        <item>https://www.googleapis.com/auth/userinfo.profile</item>
+    </string-array>
+
+    <!-- URL de redirection pour OAuth -->
+    <string name="google_oauth_redirect_uri">com.syniorae://oauth/callback</string>
+
+    <!-- URLs des endpoints Google OAuth -->
+    <string name="google_oauth_auth_url">https://accounts.google.com/o/oauth2/v2/auth</string>
+    <string name="google_oauth_token_url">https://oauth2.googleapis.com/token</string>
+    <string name="google_oauth_userinfo_url">https://www.googleapis.com/oauth2/v2/userinfo</string>
+
+    <!-- URLs de l'API Google Calendar -->
+    <string name="google_calendar_api_base">https://www.googleapis.com/calendar/v3</string>
+    <string name="google_calendar_list_url">https://www.googleapis.com/calendar/v3/users/me/calendarList</string>
+
+    <!-- Configuration des timeouts -->
+    <integer name="oauth_connect_timeout_seconds">30</integer>
+    <integer name="oauth_read_timeout_seconds">60</integer>
+
+    <!-- Configuration du cache des tokens -->
+    <integer name="oauth_token_cache_duration_hours">24</integer>
+    <integer name="oauth_refresh_token_ahead_minutes">10</integer>
+
+    <!-- Paramètres de sécurité -->
+    <bool name="oauth_use_pkce">true</bool>
+    <bool name="oauth_verify_ssl">true</bool>
+
+    <!-- Messages d'erreur localisés -->
+    <string name="oauth_error_network">Erreur réseau lors de la connexion Google</string>
+    <string name="oauth_error_cancelled">Connexion annulée par l\'utilisateur</string>
+    <string name="oauth_error_invalid_grant">Session expirée, reconnexion nécessaire</string>
+    <string name="oauth_error_access_denied">Accès refusé par Google</string>
+    <string name="oauth_error_unsupported_response">Réponse Google non supportée</string>
+
+    <!-- Configuration de développement -->
+    <bool name="oauth_debug_mode">false</bool>
+    <bool name="oauth_log_requests">false</bool>
+
+    <!-- Paramètres spécifiques à SyniOrae -->
+    <string name="app_oauth_state_prefix">syniorae_</string>
+    <string name="oauth_preferences_name">syniorae_oauth_prefs</string>
+
+    <!-- Clés pour le stockage sécurisé -->
+    <string name="oauth_keystore_alias">syniorae_oauth_keys</string>
+    <string name="oauth_access_token_key">access_token</string>
+    <string name="oauth_refresh_token_key">refresh_token</string>
+    <string name="oauth_token_expiry_key">token_expiry</string>
+    <string name="oauth_user_email_key">user_email</string>
+
+    <!-- Configuration des permissions Calendar -->
+    <string-array name="calendar_permission_descriptions">
+        <item>Lecture de vos calendriers Google</item>
+        <item>Accès aux événements de vos calendriers</item>
+        <item>Accès aux calendriers partagés avec vous</item>
+        <item>Informations de base de votre profil Google</item>
+    </string-array>
+
+    <!-- Messages pour l'utilisateur -->
+    <string name="oauth_permission_rationale">SyniOrae a besoin d\'accéder à vos calendriers Google pour synchroniser vos événements. Vos données restent privées et ne sont stockées que localement sur votre appareil.</string>
+
+    <!-- Configuration des retry -->
+    <integer name="oauth_max_retry_attempts">3</integer>
+    <integer name="oauth_retry_delay_seconds">5</integer>
+</resources>

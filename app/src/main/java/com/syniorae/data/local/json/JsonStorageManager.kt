@@ -1,18 +1,17 @@
 package com.syniorae.data.local.json
 
-import android.content.Context
-import com.syniorae.core.constants.StorageConstants
 import java.io.File
 import java.io.IOException
 
 /**
  * Manager des opérations I/O sur les fichiers JSON
  * Gère l'écriture, lecture et suppression des fichiers
+ * ✅ Version sans fuite mémoire - utilise un chemin au lieu du Context
  */
-class JsonStorageManager(private val context: Context) {
+class JsonStorageManager(private val dataDirectoryPath: String) {
 
     private val dataDirectory: File
-        get() = File(context.filesDir, StorageConstants.JSON_DIR)
+        get() = File(dataDirectoryPath)
 
     /**
      * S'assure que le répertoire de données existe

@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Étape 1 : Connexion Google et autorisations
+ * Version complète avec gestion d'erreurs et feedback utilisateur
  */
 class Step1GoogleAuthFragment : Fragment() {
 
@@ -41,9 +42,9 @@ class Step1GoogleAuthFragment : Fragment() {
         binding.stepTitle.text = "Étape 1/6 - Connexion Google"
         binding.stepDescription.text = "Connectez votre compte Google pour accéder à vos calendriers"
 
-        // Bouton de connexion Google (simulation)
+        // Bouton de connexion Google
         binding.connectGoogleButton.setOnClickListener {
-            simulateGoogleConnection()
+            startGoogleAuthentication()
         }
 
         // Bouton suivant
@@ -53,7 +54,8 @@ class Step1GoogleAuthFragment : Fragment() {
 
         // Bouton annuler
         binding.cancelButton.setOnClickListener {
-            configViewModel.previousStep()
+            // Retour vers la configuration ou annulation complète
+            requireActivity().finish()
         }
     }
 
@@ -63,69 +65,94 @@ class Step1GoogleAuthFragment : Fragment() {
                 updateUI(state)
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            configViewModel.isLoading.collect { isLoading ->
+                updateLoadingState(isLoading)
+            }
+        }
     }
 
     private fun updateUI(state: com.syniorae.presentation.fragments.calendar.configuration.CalendarConfigState) {
         if (state.isGoogleConnected) {
+            // Connexion réussie
             binding.connectGoogleButton.visibility = View.GONE
             binding.connectedAccountInfo.visibility = View.VISIBLE
             binding.connectedAccountEmail.text = state.googleAccountEmail
             binding.nextButton.isEnabled = true
+
+            // Afficher les permissions accordées
+            showPermissionsGranted()
         } else {
+            // Pas encore connecté
             binding.connectGoogleButton.visibility = View.VISIBLE
             binding.connectedAccountInfo.visibility = View.GONE
             binding.nextButton.isEnabled = false
         }
     }
 
-    /**
-     * Lance la connexion Google réelle
-     */
-    private fun simulateGoogleConnection() {
-        binding.connectGoogleButton.isEnabled = false
-        binding.connectGoogleButton.text = "Connexion en cours..."
+    private fun updateLoadingState(isLoading: Boolean) {
+        binding.connectGoogleButton.isEnabled = !isLoading
+        binding.nextButton.isEnabled = !isLoading && configViewModel.configState.value.isGoogleConnected
+
+        if (isLoading) {
+            binding.connectGoogleButton.text = "Connexion en cours..."
+        } else {
+            binding.connectGoogleButton.text = "Se connecter avec Google"
+        }
+    }
+
+    private fun startGoogleAuthentication() {
+        configViewModel.setLoading(true)
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val authManager = com.syniorae.core.di.DependencyInjection.getGoogleAuthManager()
+                val authManager = com.syniorae.core.di.DependencyInjection.getGoogleAuthManager(requireContext())
 
+                // Tenter la connexion Google
                 when (val result = authManager.signIn()) {
                     is com.syniorae.data.remote.google.GoogleAuthResult.Success -> {
-                        configViewModel.setGoogleAccount(result.userEmail)
-
-                        // Vérifier les permissions calendrier
+                        // Connexion réussie, maintenant demander les permissions calendrier
                         if (authManager.requestCalendarPermissions()) {
-                            // Succès complet
+                            // Tout est OK
+                            configViewModel.setGoogleAccount(result.userEmail)
+                            showSuccess("Connexion réussie !")
                         } else {
                             // Permissions refusées
-                            showError("Permissions d'accès au calendrier requises")
+                            showError("Les permissions d'accès au calendrier sont requises pour continuer.")
+                            authManager.signOut() // Déconnecter si permissions refusées
                         }
                     }
                     is com.syniorae.data.remote.google.GoogleAuthResult.Error -> {
-                        showError(result.message)
-                        resetConnectionButton()
+                        showError("Erreur de connexion : ${result.message}")
                     }
                     is com.syniorae.data.remote.google.GoogleAuthResult.Cancelled -> {
-                        showError("Connexion annulée par l'utilisateur")
-                        resetConnectionButton()
+                        showError("Connexion annulée. Veuillez réessayer.")
                     }
                 }
             } catch (e: Exception) {
-                showError("Erreur de connexion: ${e.message}")
-                resetConnectionButton()
+                showError("Erreur inattendue : ${e.message}")
+            } finally {
+                configViewModel.setLoading(false)
             }
         }
     }
 
-    private fun resetConnectionButton() {
-        binding.connectGoogleButton.isEnabled = true
-        binding.connectGoogleButton.text = "Se connecter avec Google"
+    private fun showPermissionsGranted() {
+        // TODO: Afficher la liste des permissions accordées
+        // Pour l'instant, juste un message de confirmation
+    }
+
+    private fun showSuccess(message: String) {
+        context?.let { ctx ->
+            android.widget.Toast.makeText(ctx, message, android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showError(message: String) {
-        // TODO: Afficher l'erreur dans l'UI
-        // Pour l'instant, juste dans les logs
-        android.util.Log.e("GoogleAuth", message)
+        context?.let { ctx ->
+            android.widget.Toast.makeText(ctx, message, android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onDestroyView() {

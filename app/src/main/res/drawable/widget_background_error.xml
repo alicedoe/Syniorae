@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arrière-plan d'erreur du widget -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Gradient rouge pour l'erreur -->
+    <gradient
+        android:startColor="#FFF44336"
+        android:endColor="#FFD32F2F"
+        android:angle="135"
+        android:type="linear" />
+
+    <!-- Coins arrondis -->
+    <corners android:radius="12dp" />
+
+    <!-- Bordure rouge foncée -->
+    <stroke
+        android:width="1dp"
+        android:color="#FFC62828" />
+
+    <!-- Ombre interne -->
+    <padding
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp" />
+
+</shape>
