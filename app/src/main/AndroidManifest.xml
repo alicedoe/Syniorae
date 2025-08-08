@@ -31,7 +31,7 @@
         android:theme="@style/Theme.Syniorae"
         tools:targetApi="31">
 
-        <!-- Activité principale -->
+        <!-- MainActivity comme activité de lancement -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -39,6 +39,19 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- OAuthCallbackActivity -->
+        <activity
+            android:name=".presentation.activities.OAuthCallbackActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.syniorae" android:host="oauth" />
             </intent-filter>
         </activity>
 

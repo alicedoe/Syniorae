@@ -1,66 +1,112 @@
 package com.syniorae.core.di
 
 import android.content.Context
-import com.syniorae.core.constants.StorageConstants
 import com.syniorae.data.local.json.JsonFileManager
+import com.syniorae.core.utils.PreferencesManager
 import com.syniorae.data.repository.widgets.WidgetRepository
-import java.io.File
 
 /**
- * Injection de dépendances simple
- * ✅ Version SANS fuite mémoire - ne stocke PAS le Context
+ * Container d'injection de dépendances simplifié
+ * Version corrigée compatible avec votre architecture existante
  */
 object DependencyInjection {
 
-    // On stocke les CHEMINS au lieu du Context
-    private var _dataDirectoryPath: String? = null
-    private var _backupDirectoryPath: String? = null
+    // ApplicationContext (safe contre les memory leaks)
+    private var applicationContext: Context? = null
 
-    // Instances des singletons
+    // Instances singleton
     private var _jsonFileManager: JsonFileManager? = null
     private var _widgetRepository: WidgetRepository? = null
     private var _calendarRepository: com.syniorae.data.repository.calendar.CalendarRepository? = null
+    private var _preferencesManager: PreferencesManager? = null
+    private var _googleAuthManager: com.syniorae.data.remote.google.GoogleAuthManager? = null
+    private var _googleCalendarApi: com.syniorae.data.remote.google.GoogleCalendarApi? = null
+
+    // Chemins calculés
+    private var _dataDirectoryPath: String? = null
+    private var _backupDirectoryPath: String? = null
+
+    /**
+     * Initialise le container avec l'ApplicationContext
+     * DOIT être appelé depuis Application.onCreate()
+     */
+    fun initialize(context: Context) {
+        applicationContext = context.applicationContext
+
+        // Calculer les chemins
+        _dataDirectoryPath = context.filesDir.absolutePath
+        _backupDirectoryPath = context.getExternalFilesDir("backups")?.absolutePath
+            ?: context.filesDir.absolutePath + "/backups"
+    }
+
+    /**
+     * Vérifie que le contexte est disponible
+     */
+    private fun requireContext(): Context {
+        return applicationContext ?: throw IllegalStateException(
+            "DependencyInjection not initialized. Call initialize() first."
+        )
+    }
 
     /**
      * Vérifie si l'injection de dépendances est initialisée
      */
     fun isInitialized(): Boolean {
-        return _dataDirectoryPath != null && _backupDirectoryPath != null
+        return applicationContext != null && _dataDirectoryPath != null && _backupDirectoryPath != null
     }
 
     /**
-     * Initialise avec le contexte de l'application
-     * Extrait les chemins puis libère la référence au Context
+     * Récupère le chemin du répertoire de données
      */
-    fun initialize(applicationContext: Context) {
-        // Extraire les chemins nécessaires
-        _dataDirectoryPath = File(applicationContext.filesDir, StorageConstants.JSON_DIR).absolutePath
-        _backupDirectoryPath = File(applicationContext.filesDir, StorageConstants.BACKUP_DIR).absolutePath
+    fun getDataDirectoryPath(): String {
+        return _dataDirectoryPath ?: throw IllegalStateException("DependencyInjection not initialized")
+    }
 
-        // Initialiser le WidgetRepository avec le Context puis libérer la référence
-        if (_widgetRepository == null) {
-            _widgetRepository = WidgetRepository(_dataDirectoryPath!!, getJsonFileManager())
-            _widgetRepository!!.initializeWithContext(applicationContext)
-        }
+    /**
+     * Récupère le chemin du répertoire de sauvegarde
+     */
+    fun getBackupDirectoryPath(): String {
+        return _backupDirectoryPath ?: throw IllegalStateException("DependencyInjection not initialized")
     }
 
     /**
      * Récupère le JsonFileManager (singleton)
+     * Compatible avec le constructeur (String, String)
      */
     fun getJsonFileManager(): JsonFileManager {
         if (_jsonFileManager == null) {
-            val dataPath = _dataDirectoryPath ?: throw IllegalStateException("DependencyInjection not initialized")
-            val backupPath = _backupDirectoryPath ?: throw IllegalStateException("DependencyInjection not initialized")
-            _jsonFileManager = JsonFileManager(dataPath, backupPath)
+            _jsonFileManager = JsonFileManager(
+                dataDirectoryPath = getDataDirectoryPath(),
+                backupDirectoryPath = getBackupDirectoryPath()
+            )
         }
         return _jsonFileManager!!
     }
 
     /**
+     * Récupère le PreferencesManager (singleton)
+     */
+    fun getPreferencesManager(): PreferencesManager {
+        if (_preferencesManager == null) {
+            _preferencesManager = PreferencesManager.getInstance(requireContext())
+        }
+        return _preferencesManager!!
+    }
+
+    /**
      * Récupère le WidgetRepository (singleton)
+     * Compatible avec le constructeur (String, JsonFileManager)
      */
     fun getWidgetRepository(): WidgetRepository {
-        return _widgetRepository ?: throw IllegalStateException("DependencyInjection not initialized")
+        if (_widgetRepository == null) {
+            _widgetRepository = WidgetRepository(
+                dataDirectoryPath = getDataDirectoryPath(),
+                jsonFileManager = getJsonFileManager()
+            )
+            // Initialiser avec le contexte une seule fois
+            _widgetRepository!!.initializeWithContext(requireContext())
+        }
+        return _widgetRepository!!
     }
 
     /**
@@ -74,17 +120,34 @@ object DependencyInjection {
     }
 
     /**
-     * Récupère le GoogleAuthManager
+     * Récupère le GoogleAuthManager (singleton)
      */
     fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
-        return com.syniorae.data.remote.google.GoogleAuthManager()
+        if (_googleAuthManager == null) {
+            // Utilise le constructeur sans paramètre selon votre implémentation actuelle
+            _googleAuthManager = com.syniorae.data.remote.google.GoogleAuthManager()
+        }
+        return _googleAuthManager!!
     }
 
     /**
-     * Récupère le GoogleCalendarApi
+     * Récupère le GoogleCalendarApi (singleton)
      */
     fun getGoogleCalendarApi(): com.syniorae.data.remote.google.GoogleCalendarApi {
-        return com.syniorae.data.remote.google.GoogleCalendarApi(getGoogleAuthManager())
+        if (_googleCalendarApi == null) {
+            _googleCalendarApi = com.syniorae.data.remote.google.GoogleCalendarApi(getGoogleAuthManager())
+        }
+        return _googleCalendarApi!!
+    }
+
+    /**
+     * Récupère le GoogleCalendarService (nouvelle instance à chaque appel)
+     */
+    fun getGoogleCalendarService(): com.syniorae.data.remote.google.GoogleCalendarService {
+        return com.syniorae.data.remote.google.GoogleCalendarService(
+            context = requireContext(),
+            authManager = getGoogleAuthManager()
+        )
     }
 
     /**
@@ -94,8 +157,12 @@ object DependencyInjection {
         _jsonFileManager = null
         _widgetRepository = null
         _calendarRepository = null
+        _preferencesManager = null
+        _googleAuthManager = null
+        _googleCalendarApi = null
         _dataDirectoryPath = null
         _backupDirectoryPath = null
+        // Ne pas nettoyer applicationContext
     }
 
     /**
@@ -119,5 +186,13 @@ object DependencyInjection {
      */
     fun resetCalendarRepository() {
         _calendarRepository = null
+    }
+
+    /**
+     * Force la création d'une nouvelle instance du GoogleAuthManager
+     */
+    fun resetGoogleAuthManager() {
+        _googleAuthManager = null
+        _googleCalendarApi = null
     }
 }
