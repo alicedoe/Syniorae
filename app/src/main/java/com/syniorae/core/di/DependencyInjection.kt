@@ -22,7 +22,7 @@ object DependencyInjection {
     private var _googleAuthManager: com.syniorae.data.remote.google.GoogleAuthManager? = null
     private var _googleCalendarApi: com.syniorae.data.remote.google.GoogleCalendarApi? = null
     private var _googleTokenManager: com.syniorae.data.remote.google.GoogleTokenManager? = null
-    private var _googleCalendarService: com.syniorae.data.remote.google.GoogleCalendarServiceBackup? = null
+    private var _googleCalendarService: com.syniorae.data.remote.google.GoogleCalendarService? = null
 
     // Chemins calculés
     private var _dataDirectoryPath: String? = null
@@ -124,9 +124,10 @@ object DependencyInjection {
     /**
      * Récupère le GoogleAuthManager (singleton)
      */
+
     fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
         if (_googleAuthManager == null) {
-            _googleAuthManager = com.syniorae.data.remote.google.GoogleAuthManager()
+            _googleAuthManager = com.syniorae.data.remote.google.GoogleAuthManager(requireContext())
         }
         return _googleAuthManager!!
     }
@@ -154,8 +155,14 @@ object DependencyInjection {
     /**
      * Récupère le GoogleCalendarService (singleton)
      */
-    fun getGoogleCalendarService(): String {
-        return "Test - GoogleCalendarService disabled temporarily"
+    fun getGoogleCalendarService(): com.syniorae.data.remote.google.GoogleCalendarService {
+        if (_googleCalendarService == null) {
+            _googleCalendarService = com.syniorae.data.remote.google.GoogleCalendarService(
+                context = requireContext(),
+                authManager = getGoogleAuthManager()
+            )
+        }
+        return _googleCalendarService!!
     }
 
     /**

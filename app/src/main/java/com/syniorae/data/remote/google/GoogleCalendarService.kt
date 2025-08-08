@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * Service pour interagir avec l'API Google Calendar réelle
  * Utilise OkHttp pour les appels HTTP vers Google Calendar API
  */
-class GoogleCalendarServiceBackup(
+class GoogleCalendarService(
     private val context: Context,
     private val authManager: GoogleAuthManager
 ) {

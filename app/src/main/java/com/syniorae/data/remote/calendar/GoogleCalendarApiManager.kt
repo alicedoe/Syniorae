@@ -1,34 +1,57 @@
 package com.syniorae.data.remote.calendar
 
 import android.content.Context
+import android.util.Log
+import com.syniorae.data.remote.google.ApiResponse
+import com.syniorae.data.remote.google.GoogleApiClient
+import com.syniorae.data.remote.google.GoogleTokenManager
 import com.syniorae.domain.exceptions.AuthenticationException
 import com.syniorae.domain.exceptions.SyncException
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
 
 /**
- * Manager pour l'API Google Calendar
- * Version de simulation sans dépendances Google (pour éviter les erreurs de build)
- * TODO: Remplacer par une vraie intégration Google Calendar API plus tard
+ * Manager pour l'API Google Calendar (version réelle)
  */
-class GoogleCalendarApiManager(private val context: Context) {
+class GoogleCalendarApiManager(
+    private val context: Context,
+    private val tokenManager: GoogleTokenManager
+) {
 
-    private var isAuthenticated = false
-    private var currentToken: String? = null
+    private val googleApiClient by lazy {
+        GoogleApiClient(context, tokenManager)
+    }
 
     /**
-     * Authentifie l'utilisateur avec Google
+     * Authentifie l'utilisateur avec Google (vérifie le token existant)
      */
-    suspend fun authenticate(): Result<String> {
-        return try {
-            // Simulation de l'authentification Google
-            delay(1000)
+    suspend fun authenticate(): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val connectivityOk = googleApiClient.testConnectivity()
+            if (!connectivityOk) {
+                return@withContext Result.failure(AuthenticationException.tokenExpired())
+            }
 
-            // Pour la démo, on simule une authentification réussie
-            isAuthenticated = true
-            currentToken = "fake_token_${System.currentTimeMillis()}"
-
-            Result.success("utilisateur@gmail.com")
+            // Récupérer l'email utilisateur via /userinfo
+            when (val resp = googleApiClient.get("/oauth2/v2/userinfo")) {
+                is ApiResponse.Success -> {
+                    val json = JSONObject(resp.body)
+                    val email = json.optString("email", "")
+                    if (email.isNotBlank()) {
+                        Result.success(email)
+                    } else {
+                        Result.failure(AuthenticationException.googleConnectionFailed())
+                    }
+                }
+                is ApiResponse.Error -> {
+                    Result.failure(AuthenticationException.googleConnectionFailed(Exception(resp.message)))
+                }
+            }
         } catch (e: Exception) {
             Result.failure(AuthenticationException.googleConnectionFailed(e))
         }
@@ -37,47 +60,30 @@ class GoogleCalendarApiManager(private val context: Context) {
     /**
      * Récupère la liste des calendriers de l'utilisateur
      */
-    suspend fun getCalendarList(): Result<List<CalendarInfo>> {
-        return try {
-            if (!isAuthenticated) {
-                return Result.failure(AuthenticationException.tokenExpired())
+    suspend fun getCalendarList(): Result<List<CalendarInfo>> = withContext(Dispatchers.IO) {
+        try {
+            when (val resp = googleApiClient.get("/calendar/v3/users/me/calendarList")) {
+                is ApiResponse.Success -> {
+                    val json = JSONObject(resp.body)
+                    val items = json.optJSONArray("items") ?: return@withContext Result.success(emptyList())
+
+                    val calendars = mutableListOf<CalendarInfo>()
+                    for (i in 0 until items.length()) {
+                        val obj = items.getJSONObject(i)
+                        calendars.add(
+                            CalendarInfo(
+                                id = obj.getString("id"),
+                                name = obj.optString("summary", ""),
+                                description = obj.optString("description", ""),
+                                isShared = obj.optBoolean("primary", false).not(),
+                                colorId = obj.optString("colorId", "")
+                            )
+                        )
+                    }
+                    Result.success(calendars)
+                }
+                is ApiResponse.Error -> Result.failure(SyncException.networkError(Exception(resp.message)))
             }
-
-            // Simulation de récupération des calendriers
-            delay(1500)
-
-            val calendars = listOf(
-                CalendarInfo(
-                    id = "primary",
-                    name = "Principal",
-                    description = "Mon calendrier principal",
-                    isShared = false,
-                    colorId = "1"
-                ),
-                CalendarInfo(
-                    id = "work_calendar",
-                    name = "Travail",
-                    description = "Calendrier professionnel",
-                    isShared = false,
-                    colorId = "2"
-                ),
-                CalendarInfo(
-                    id = "family_calendar",
-                    name = "Famille",
-                    description = "Événements familiaux",
-                    isShared = true,
-                    colorId = "3"
-                ),
-                CalendarInfo(
-                    id = "shared_birthdays",
-                    name = "Anniversaires",
-                    description = "Calendrier partagé des anniversaires",
-                    isShared = true,
-                    colorId = "4"
-                )
-            )
-
-            Result.success(calendars)
         } catch (e: Exception) {
             Result.failure(SyncException.networkError(e))
         }
@@ -90,37 +96,60 @@ class GoogleCalendarApiManager(private val context: Context) {
         calendarId: String,
         maxResults: Int = 50,
         weeksAhead: Int = 4
-    ): Result<List<EventInfo>> {
-        return try {
-            if (!isAuthenticated) {
-                return Result.failure(AuthenticationException.tokenExpired())
+    ): Result<List<EventInfo>> = withContext(Dispatchers.IO) {
+        try {
+            val timeMin = ZonedDateTime.now().toInstant().toString()
+            val timeMax = ZonedDateTime.now().plusWeeks(weeksAhead.toLong()).toInstant().toString()
+
+            val params = mapOf(
+                "maxResults" to maxResults.toString(),
+                "singleEvents" to "true",
+                "orderBy" to "startTime",
+                "timeMin" to timeMin,
+                "timeMax" to timeMax
+            )
+
+            when (val resp = googleApiClient.get("/calendar/v3/calendars/$calendarId/events", params)) {
+                is ApiResponse.Success -> {
+                    val json = JSONObject(resp.body)
+                    val items = json.optJSONArray("items") ?: return@withContext Result.success(emptyList())
+
+                    val events = mutableListOf<EventInfo>()
+                    for (i in 0 until items.length()) {
+                        val obj = items.getJSONObject(i)
+                        val startDateTime = parseDateTime(obj.getJSONObject("start"))
+                        val endDateTime = parseDateTime(obj.getJSONObject("end"))
+
+                        events.add(
+                            EventInfo(
+                                id = obj.getString("id"),
+                                title = obj.optString("summary", ""),
+                                startDateTime = startDateTime,
+                                endDateTime = endDateTime,
+                                isAllDay = !obj.getJSONObject("start").has("dateTime"),
+                                isRecurring = obj.has("recurrence"),
+                                location = obj.optString("location", "")
+                            )
+                        )
+                    }
+                    Result.success(events)
+                }
+                is ApiResponse.Error -> Result.failure(SyncException(resp.message))
+
+
             }
-
-            // Simulation de récupération des événements
-            delay(2000)
-
-            val events = generateTestEvents(maxResults, weeksAhead)
-            Result.success(events)
-
         } catch (e: Exception) {
             Result.failure(SyncException.networkError(e))
         }
     }
 
     /**
-     * Vérifie si le token d'authentification est valide
-     */
-    fun isTokenValid(): Boolean {
-        return isAuthenticated && currentToken != null
-    }
-
-    /**
      * Déconnecte l'utilisateur
      */
-    suspend fun signOut(): Result<Unit> {
-        return try {
-            isAuthenticated = false
-            currentToken = null
+    suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            tokenManager.clearTokens()
+            googleApiClient.cleanup()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -128,118 +157,14 @@ class GoogleCalendarApiManager(private val context: Context) {
     }
 
     /**
-     * Génère des événements de test pour la démonstration
+     * Parse un objet JSON "start" ou "end" en LocalDateTime
      */
-    private fun generateTestEvents(maxResults: Int, weeksAhead: Int): List<EventInfo> {
-        val events = mutableListOf<EventInfo>()
-        val now = LocalDateTime.now()
-
-        // Événement aujourd'hui
-        events.add(
-            EventInfo(
-                id = "event_today_1",
-                title = "Rendez-vous médecin",
-                startDateTime = now.withHour(14).withMinute(30),
-                endDateTime = now.withHour(15).withMinute(30),
-                isAllDay = false,
-                isRecurring = false,
-                location = "Cabinet Dr. Martin"
-            )
-        )
-
-        // Événement en cours aujourd'hui
-        events.add(
-            EventInfo(
-                id = "event_today_2",
-                title = "Réunion famille",
-                startDateTime = now.minusHours(1),
-                endDateTime = now.plusHours(1),
-                isAllDay = false,
-                isRecurring = false,
-                location = "Maison"
-            )
-        )
-
-        // Événement demain
-        events.add(
-            EventInfo(
-                id = "event_tomorrow_1",
-                title = "Kinésithérapeute",
-                startDateTime = now.plusDays(1).withHour(9).withMinute(0),
-                endDateTime = now.plusDays(1).withHour(10).withMinute(0),
-                isAllDay = false,
-                isRecurring = false,
-                location = "Centre de rééducation"
-            )
-        )
-
-        // Événement toute la journée
-        events.add(
-            EventInfo(
-                id = "event_birthday",
-                title = "Anniversaire Sophie",
-                startDateTime = now.plusDays(2).withHour(0).withMinute(0),
-                endDateTime = now.plusDays(2).withHour(23).withMinute(59),
-                isAllDay = true,
-                isRecurring = true,
-                location = ""
-            )
-        )
-
-        // Événement multi-jours
-        events.add(
-            EventInfo(
-                id = "event_vacation",
-                title = "Vacances en famille",
-                startDateTime = now.plusDays(7).withHour(0).withMinute(0),
-                endDateTime = now.plusDays(14).withHour(23).withMinute(59),
-                isAllDay = true,
-                isRecurring = false,
-                location = "Côte d'Azur"
-            )
-        )
-
-        // Ajouter plus d'événements pour remplir selon maxResults
-        val daysToGenerate = minOf(weeksAhead * 7, 30)
-        for (day in 3..daysToGenerate) {
-            if (events.size >= maxResults) break
-
-            // Ajouter des événements aléatoires
-            if (day % 3 == 0) { // Événement tous les 3 jours environ
-                events.add(
-                    EventInfo(
-                        id = "event_generated_$day",
-                        title = getRandomEventTitle(),
-                        startDateTime = now.plusDays(day.toLong()).withHour(10 + (day % 8)).withMinute(0),
-                        endDateTime = now.plusDays(day.toLong()).withHour(11 + (day % 8)).withMinute(0),
-                        isAllDay = false,
-                        isRecurring = false,
-                        location = ""
-                    )
-                )
-            }
+    private fun parseDateTime(obj: JSONObject): LocalDateTime {
+        return if (obj.has("dateTime")) {
+            OffsetDateTime.parse(obj.getString("dateTime")).toLocalDateTime()
+        } else {
+            LocalDate.parse(obj.getString("date")).atStartOfDay()
         }
-
-        return events.take(maxResults)
-    }
-
-    /**
-     * Génère des titres d'événements aléatoires pour la démo
-     */
-    private fun getRandomEventTitle(): String {
-        val titles = listOf(
-            "Rendez-vous dentiste",
-            "Courses au marché",
-            "Appel téléphonique important",
-            "Visite chez le coiffeur",
-            "Déjeuner avec amis",
-            "Promenade au parc",
-            "Lecture du journal",
-            "Jardinage",
-            "Préparation du dîner",
-            "Émission TV préférée"
-        )
-        return titles.random()
     }
 }
 
@@ -266,17 +191,11 @@ data class EventInfo(
     val isRecurring: Boolean,
     val location: String = ""
 ) {
-    /**
-     * Vérifie si l'événement est actuellement en cours
-     */
     fun isCurrentlyRunning(): Boolean {
         val now = LocalDateTime.now()
         return now.isAfter(startDateTime) && now.isBefore(endDateTime)
     }
 
-    /**
-     * Vérifie si l'événement s'étend sur plusieurs jours
-     */
     fun isMultiDay(): Boolean {
         return startDateTime.toLocalDate() != endDateTime.toLocalDate()
     }
