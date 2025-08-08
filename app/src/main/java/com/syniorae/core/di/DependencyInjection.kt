@@ -21,6 +21,8 @@ object DependencyInjection {
     private var _preferencesManager: PreferencesManager? = null
     private var _googleAuthManager: com.syniorae.data.remote.google.GoogleAuthManager? = null
     private var _googleCalendarApi: com.syniorae.data.remote.google.GoogleCalendarApi? = null
+    private var _googleTokenManager: com.syniorae.data.remote.google.GoogleTokenManager? = null
+    private var _googleCalendarService: com.syniorae.data.remote.google.GoogleCalendarServiceBackup? = null
 
     // Chemins calculés
     private var _dataDirectoryPath: String? = null
@@ -124,10 +126,19 @@ object DependencyInjection {
      */
     fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
         if (_googleAuthManager == null) {
-            // Utilise le constructeur sans paramètre selon votre implémentation actuelle
             _googleAuthManager = com.syniorae.data.remote.google.GoogleAuthManager()
         }
         return _googleAuthManager!!
+    }
+
+    /**
+     * Récupère le GoogleTokenManager (singleton)
+     */
+    fun getGoogleTokenManager(): com.syniorae.data.remote.google.GoogleTokenManager {
+        if (_googleTokenManager == null) {
+            _googleTokenManager = com.syniorae.data.remote.google.GoogleTokenManager(requireContext())
+        }
+        return _googleTokenManager!!
     }
 
     /**
@@ -141,13 +152,10 @@ object DependencyInjection {
     }
 
     /**
-     * Récupère le GoogleCalendarService (nouvelle instance à chaque appel)
+     * Récupère le GoogleCalendarService (singleton)
      */
-    fun getGoogleCalendarService(): com.syniorae.data.remote.google.GoogleCalendarService {
-        return com.syniorae.data.remote.google.GoogleCalendarService(
-            context = requireContext(),
-            authManager = getGoogleAuthManager()
-        )
+    fun getGoogleCalendarService(): String {
+        return "Test - GoogleCalendarService disabled temporarily"
     }
 
     /**
@@ -160,6 +168,8 @@ object DependencyInjection {
         _preferencesManager = null
         _googleAuthManager = null
         _googleCalendarApi = null
+        _googleTokenManager = null
+        _googleCalendarService = null
         _dataDirectoryPath = null
         _backupDirectoryPath = null
         // Ne pas nettoyer applicationContext
@@ -194,5 +204,20 @@ object DependencyInjection {
     fun resetGoogleAuthManager() {
         _googleAuthManager = null
         _googleCalendarApi = null
+        _googleCalendarService = null
+    }
+
+    /**
+     * Force la création d'une nouvelle instance du GoogleTokenManager
+     */
+    fun resetGoogleTokenManager() {
+        _googleTokenManager = null
+    }
+
+    /**
+     * Force la création d'une nouvelle instance du GoogleCalendarService
+     */
+    fun resetGoogleCalendarService() {
+        _googleCalendarService = null
     }
 }

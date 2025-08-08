@@ -5,7 +5,6 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -14,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * Service pour interagir avec l'API Google Calendar réelle
  * Utilise OkHttp pour les appels HTTP vers Google Calendar API
  */
-class GoogleCalendarService(
+class GoogleCalendarServiceBackup(
     private val context: Context,
     private val authManager: GoogleAuthManager
 ) {

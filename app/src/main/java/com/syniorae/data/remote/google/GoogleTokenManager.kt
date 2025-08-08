@@ -237,6 +237,80 @@ class GoogleTokenManager(private val context: Context) {
     }
 
     /**
+     * Échange un code d'autorisation contre des tokens d'accès
+     */
+    suspend fun exchangeCodeForTokens(authorizationCode: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Échange du code d'autorisation contre les tokens...")
+
+                val requestBody = buildTokenExchangeRequestBody(authorizationCode)
+                val request = Request.Builder()
+                    .url(TOKEN_URL)
+                    .post(requestBody)
+                    .build()
+
+                val response = httpClient.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
+
+                if (response.isSuccessful) {
+                    parseAndSaveTokenResponse(responseBody)
+                    Log.d(TAG, "Échange de tokens réussi")
+                    true
+                } else {
+                    Log.e(TAG, "Erreur lors de l'échange: $responseBody")
+                    false
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception lors de l'échange du code", e)
+                false
+            }
+        }
+    }
+
+    /**
+     * Construit le corps de la requête d'échange de code
+     */
+    private fun buildTokenExchangeRequestBody(authorizationCode: String): RequestBody {
+        val formParams = mapOf(
+            "grant_type" to "authorization_code",
+            "code" to authorizationCode,
+            "client_id" to CLIENT_ID,
+            "client_secret" to CLIENT_SECRET,
+            "redirect_uri" to "com.syniorae://oauth/callback"
+        )
+
+        val formBody = formParams.entries.joinToString("&") { (key, value) ->
+            "${java.net.URLEncoder.encode(key, "UTF-8")}=${java.net.URLEncoder.encode(value, "UTF-8")}"
+        }
+
+        return formBody.toRequestBody("application/x-www-form-urlencoded".toMediaType())
+    }
+
+    /**
+     * Parse et sauvegarde la réponse d'échange de tokens
+     */
+    private fun parseAndSaveTokenResponse(responseBody: String) {
+        try {
+            val json = JSONObject(responseBody)
+            val accessToken = json.getString("access_token")
+            val refreshToken = json.getString("refresh_token")
+            val expiresIn = json.optLong("expires_in", 3600)
+            val scope = json.optString("scope", "")
+
+            // Extraire l'email si présent, sinon garder l'existant
+            val userEmail = getUserEmail() ?: "unknown@gmail.com"
+            val grantedScopes = if (scope.isNotBlank()) scope.split(" ") else emptyList()
+
+            saveTokens(accessToken, refreshToken, expiresIn, userEmail, grantedScopes)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors du parsing de la réponse d'échange", e)
+            throw e
+        }
+    }
+
+    /**
      * Vérifie si l'utilisateur a accordé un scope spécifique
      */
     fun hasScopeGranted(scope: String): Boolean {
