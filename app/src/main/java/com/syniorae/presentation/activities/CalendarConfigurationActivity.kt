@@ -87,7 +87,7 @@ class CalendarConfigurationActivity : AppCompatActivity() {
 
     private fun navigateToStep(step: Int) {
         val fragment = when (step) {
-            1 -> Step1GoogleAuthFragment()
+            1 -> Step1GoogleAuthFragment() // ✅ Bon nom de classe
             2 -> Step2CalendarSelectionFragment()
             3 -> Step3WeeksParameterFragment()
             4 -> Step4EventsParameterFragment()
@@ -139,7 +139,7 @@ class CalendarConfigurationActivity : AppCompatActivity() {
             binding.step6Indicator
         )
 
-        val primaryColor = ContextCompat.getColor(this, R.color.primary_senior)
+        val primaryColor = 0xFF2196F3.toInt() // Même bleu que primary_senior
         val grayColor = ContextCompat.getColor(this, android.R.color.darker_gray)
 
         indicators.forEachIndexed { index, indicator ->

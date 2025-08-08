@@ -5,7 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/padding_large">
+    android:padding="@dimen/padding_large"
+    tools:context=".presentation.widgets.calendar.configuration.steps.Step1GoogleAuthFragment">
 
     <!-- Titre de l'étape -->
     <TextView
@@ -13,13 +14,14 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"
+        android:text="Étape 1/6 - Connexion Google"
         android:textSize="@dimen/text_size_extra_large"
         android:textStyle="bold"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Étape 1/6 - Connexion Google" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Description -->
     <TextView
@@ -27,12 +29,13 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:text="Connectez votre compte Google pour accéder à vos calendriers."
         android:textSize="@dimen/text_size_medium"
         android:gravity="center"
+        android:lineSpacingExtra="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/stepTitle"
-        tools:text="Connectez votre compte Google pour accéder à vos calendriers" />
+        app:layout_constraintTop_toBottomOf="@id/stepTitle" />
 
     <!-- Contenu principal -->
     <LinearLayout
@@ -41,7 +44,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="48dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stepDescription">
@@ -54,16 +57,29 @@
             android:text="Se connecter avec Google"
             android:textSize="@dimen/text_size_medium"
             android:padding="@dimen/padding_medium"
-            android:minWidth="200dp"
-            android:minHeight="@dimen/touch_target_large" />
+            android:minWidth="280dp"
+            android:minHeight="@dimen/touch_target_large"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Barre de progression -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <!-- Informations du compte connecté -->
         <LinearLayout
             android:id="@+id/connectedAccountInfo"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
+            android:background="@drawable/rounded_background_success"
+            android:padding="16dp"
+            android:layout_marginTop="16dp"
             android:visibility="gone"
             tools:visibility="visible">
 
@@ -72,18 +88,62 @@
                 android:layout_height="wrap_content"
                 android:text="✓ Connecté avec succès"
                 android:textSize="@dimen/text_size_medium"
-                android:textColor="@android:color/holo_green_dark"
-                android:textStyle="bold" />
+                android:textColor="@color/success_dark"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/connectedAccountEmail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:textSize="@dimen/text_size_medium"
+                android:textColor="@color/success_dark"
+                android:layout_marginBottom="8dp"
                 tools:text="utilisateur@gmail.com" />
 
+            <!-- Informations sur les permissions -->
+            <TextView
+                android:id="@+id/permissionsInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/success_dark"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="✓ Accès aux calendriers accordé\n✓ Lecture seule des événements" />
+
         </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Zone d'information supplémentaire -->
+    <LinearLayout
+        android:id="@+id/infoSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_background_info"
+        android:padding="16dp"
+        android:layout_marginTop="32dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/mainContent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ℹ️ Informations"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="• Accès lecture seule à vos calendriers\n• Aucune donnée n'est stockée en ligne\n• Vous pouvez révoquer l'accès à tout moment"
+            android:textSize="12sp"
+            android:lineSpacingExtra="2dp" />
 
     </LinearLayout>
 
@@ -92,9 +152,10 @@
         android:id="@+id/navigationButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
         android:orientation="horizontal"
         android:gravity="center"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
