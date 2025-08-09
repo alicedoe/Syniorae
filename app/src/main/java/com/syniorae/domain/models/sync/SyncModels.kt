@@ -188,61 +188,7 @@ data class SyncConfiguration(
     }
 }
 
-/**
- * Résultat détaillé d'une synchronisation
- */
-data class SyncResult(
-    val isSuccess: Boolean,
-    val eventsCount: Int = 0,
-    val durationMs: Long = 0L,
-    val errorMessage: String? = null,
-    val errorCode: String? = null,
-    val retrievedData: Map<String, Any> = emptyMap(),
-    val warnings: List<String> = emptyList()
-) {
 
-    /**
-     * Crée un résultat de succès
-     */
-    companion object {
-        fun success(eventsCount: Int, durationMs: Long = 0L, warnings: List<String> = emptyList()) =
-            SyncResult(
-                isSuccess = true,
-                eventsCount = eventsCount,
-                durationMs = durationMs,
-                warnings = warnings
-            )
-
-        fun error(message: String, code: String? = null, durationMs: Long = 0L) =
-            SyncResult(
-                isSuccess = false,
-                errorMessage = message,
-                errorCode = code,
-                durationMs = durationMs
-            )
-    }
-
-    /**
-     * Vérifie si le résultat a des avertissements
-     */
-    fun hasWarnings(): Boolean = warnings.isNotEmpty()
-
-    /**
-     * Retourne un résumé textuel du résultat
-     */
-    fun getSummary(): String {
-        return if (isSuccess) {
-            buildString {
-                append("Synchronisation réussie")
-                if (eventsCount > 0) append(" • $eventsCount événements")
-                if (durationMs > 0) append(" • ${durationMs / 1000}s")
-                if (hasWarnings()) append(" • ${warnings.size} avertissement(s)")
-            }
-        } else {
-            "Échec de synchronisation : ${errorMessage ?: "Erreur inconnue"}"
-        }
-    }
-}
 
 /**
  * Statistiques de synchronisation sur une période

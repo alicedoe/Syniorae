@@ -4,23 +4,27 @@ import com.google.gson.*
 import java.lang.reflect.Type
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 /**
- * Adaptateur Gson pour sérialiser/désérialiser LocalDateTime
+ * Adaptateur Gson pour LocalDateTime
+ * Permet la sérialisation/désérialisation JSON des dates
  */
 class LocalDateTimeAdapter : JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
 
-    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    companion object {
+        private val FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    }
 
     override fun serialize(
         src: LocalDateTime?,
         typeOfSrc: Type?,
         context: JsonSerializationContext?
     ): JsonElement {
-        return if (src != null) {
-            JsonPrimitive(src.format(formatter))
-        } else {
+        return if (src == null) {
             JsonNull.INSTANCE
+        } else {
+            JsonPrimitive(src.format(FORMATTER))
         }
     }
 
@@ -30,13 +34,13 @@ class LocalDateTimeAdapter : JsonSerializer<LocalDateTime>, JsonDeserializer<Loc
         context: JsonDeserializationContext?
     ): LocalDateTime? {
         return try {
-            if (json?.isJsonNull == false) {
-                LocalDateTime.parse(json.asString, formatter)
-            } else {
+            if (json?.isJsonNull != false) {
                 null
+            } else {
+                LocalDateTime.parse(json.asString, FORMATTER)
             }
-        } catch (e: Exception) {
-            null
+        } catch (e: DateTimeParseException) {
+            throw JsonParseException("Erreur parsing LocalDateTime: ${json?.asString}", e)
         }
     }
 }

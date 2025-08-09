@@ -157,7 +157,7 @@ class CalendarConfigurationViewModel : BaseViewModel() {
 
             try {
                 // 1. Créer le fichier config.json
-                val configModel = ConfigurationJsonModel(
+                val configModel = CalendarConfigurationJsonModel(
                     calendrier_id = state.selectedCalendarId,
                     calendrier_name = state.selectedCalendarName,
                     nb_semaines_max = state.weeksAhead,

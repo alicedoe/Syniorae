@@ -228,4 +228,8 @@ object DependencyInjection {
     fun resetGoogleCalendarService() {
         _googleCalendarService = null
     }
+
+    fun getContext(): Context {
+        return requireContext()
+    }
 }

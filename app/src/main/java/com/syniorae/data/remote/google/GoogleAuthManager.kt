@@ -12,6 +12,9 @@ import com.google.android.gms.common.api.Scope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Manager pour l'authentification Google
@@ -228,7 +231,20 @@ class GoogleAuthManager(private val context: Context) {
      * Obtient le token d'accès actuel
      */
     fun getAccessToken(): String? {
-        return tokenManager.getAccessToken()
+        return try {
+            // D'abord essayer le token réel
+            val account = GoogleSignIn.getLastSignedInAccount(context)
+            if (account?.account != null) {
+                runBlocking {
+                    getRealCalendarToken()
+                }
+            } else {
+                tokenManager.getAccessToken()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur token", e)
+            tokenManager.getAccessToken()
+        }
     }
 
     /**
@@ -257,6 +273,30 @@ class GoogleAuthManager(private val context: Context) {
             Log.e(TAG, "Impossible de charger le Client ID depuis les ressources", e)
             // Fallback vers l'ancien Client ID en cas d'échec
             "988967002768-fks9sco2sqrh3bg3opvf1ln4km8grecd.apps.googleusercontent.com"
+        }
+    }
+
+    /**
+     * Récupère un vrai token d'accès pour l'API Google Calendar
+     */
+    suspend fun getRealCalendarToken(): String? {
+        return try {
+            val account = GoogleSignIn.getLastSignedInAccount(context)
+            if (account?.account != null) {
+                // Utiliser GoogleAuthUtil pour obtenir un token OAuth réel
+                withContext(Dispatchers.IO) {
+                    com.google.android.gms.auth.GoogleAuthUtil.getToken(
+                        context,
+                        account.account!!,
+                        "oauth2:https://www.googleapis.com/auth/calendar.readonly"
+                    )
+                }
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur récupération token réel", e)
+            null
         }
     }
 }

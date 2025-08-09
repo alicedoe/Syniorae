@@ -40,6 +40,7 @@ object NetworkUtils {
         } else {
             @Suppress("DEPRECATION")
             val activeNetworkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
             activeNetworkInfo?.isConnected == true
         }
     }
@@ -57,7 +58,10 @@ object NetworkUtils {
         } else {
             @Suppress("DEPRECATION")
             val activeNetworkInfo = connectivityManager.activeNetworkInfo
-            activeNetworkInfo?.type == ConnectivityManager.TYPE_WIFI && activeNetworkInfo.isConnected
+            @Suppress("DEPRECATION")
+            activeNetworkInfo?.type == ConnectivityManager.TYPE_WIFI &&
+                    @Suppress("DEPRECATION")
+                    activeNetworkInfo.isConnected
         }
     }
 
@@ -273,10 +277,15 @@ object NetworkUtils {
         } else {
             @Suppress("DEPRECATION")
             val activeNetworkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
             if (activeNetworkInfo != null && activeNetworkInfo.isConnected) {
+                @Suppress("DEPRECATION")
                 when (activeNetworkInfo.type) {
+                    @Suppress("DEPRECATION")
                     ConnectivityManager.TYPE_WIFI -> NetworkType.WIFI
+                    @Suppress("DEPRECATION")
                     ConnectivityManager.TYPE_MOBILE -> NetworkType.MOBILE
+                    @Suppress("DEPRECATION")
                     ConnectivityManager.TYPE_ETHERNET -> NetworkType.ETHERNET
                     else -> NetworkType.OTHER
                 }
