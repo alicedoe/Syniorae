@@ -53,4 +53,23 @@
     <string name="october">octobre</string>
     <string name="november">novembre</string>
     <string name="december">décembre</string>
+
+    <!-- Calendar Settings -->
+    <string name="calendar_settings_title">Paramètres du calendrier</string>
+    <string name="google_account">Compte Google</string>
+    <string name="disconnect">Déconnecter</string>
+    <string name="selected_calendar">Calendrier sélectionné</string>
+    <string name="configure">Configurer</string>
+    <string name="recovery_period">Période de récupération</string>
+
+    <!-- Dialog confirmation -->
+    <string name="disconnect_google_title">Déconnexion Google</string>
+    <string name="disconnect_google_message">Êtes-vous sûr de vouloir déconnecter votre compte Google ? Toute la configuration sera supprimée.</string>
+    <string name="cancel">Annuler</string>
+
+    <!-- Format strings -->
+    <string name="period_weeks_format">%d semaines</string>
+    <string name="events_max_format">%d événements max</string>
+    <string name="sync_frequency_format">Toutes les %d heures</string>
+    <string name="icon_associations_format">%d associations créées</string>
 </resources>
