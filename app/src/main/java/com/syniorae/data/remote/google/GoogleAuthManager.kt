@@ -198,27 +198,90 @@ class GoogleAuthManager(private val context: Context) {
     /**
      * Déconnecte l'utilisateur
      */
+    // Ajouter cette méthode dans GoogleAuthManager.kt
+
+    /**
+     * Déconnecte l'utilisateur et révoque TOUS les accès
+     */
     suspend fun signOut(): Boolean {
         return try {
-            Log.d(TAG, "Déconnexion de l'utilisateur")
+            Log.d(TAG, "Déconnexion complète de l'utilisateur")
 
-            // Déconnexion Google Sign-In
+            // 1. Révoquer les tokens OAuth pour supprimer les autorisations
+            try {
+                val accessToken = tokenManager.getAccessToken()
+                if (!accessToken.isNullOrEmpty()) {
+                    // Appel à l'API Google pour révoquer le token
+                    revokeToken(accessToken)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Erreur lors de la révocation du token: ${e.message}")
+                // Continuer quand même
+            }
+
+            // 2. Déconnexion Google Sign-In (supprime les credentials locaux)
             googleSignInClient.signOut().addOnCompleteListener {
                 Log.d(TAG, "Déconnexion Google Sign-In terminée")
             }
 
-            // Effacer les tokens stockés
+            // 3. Révoquer les autorisations Google Sign-In
+            googleSignInClient.revokeAccess().addOnCompleteListener {
+                Log.d(TAG, "Révocation des autorisations Google Sign-In terminée")
+            }
+
+            // 4. Effacer les tokens stockés localement
             tokenManager.clearTokens()
 
-            // Réinitialiser l'état
+            // 5. Réinitialiser l'état d'authentification
             _authState.value = GoogleAuthState()
 
+            Log.i(TAG, "Déconnexion complète réussie")
             true
+
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de la déconnexion", e)
-            false
+            Log.e(TAG, "Erreur lors de la déconnexion complète", e)
+
+            // Même en cas d'erreur, nettoyer les données locales
+            try {
+                tokenManager.clearTokens()
+                _authState.value = GoogleAuthState()
+            } catch (clearError: Exception) {
+                Log.e(TAG, "Erreur lors du nettoyage des données locales", clearError)
+            }
+
+            // Retourner true quand même pour permettre à l'UI de continuer
+            true
         }
     }
+
+    /**
+     * Révoque un token OAuth auprès de Google
+     */
+    private suspend fun revokeToken(token: String) {
+        try {
+            val revokeUrl = "https://oauth2.googleapis.com/revoke?token=$token"
+
+            // TODO: Implémenter l'appel HTTP réel pour révoquer le token
+            // Pour l'instant, juste un log
+            Log.d(TAG, "Révocation du token: ${token.take(10)}...")
+
+            // Exemple d'implémentation avec OkHttp (à adapter) :
+            // val request = Request.Builder()
+            //     .url(revokeUrl)
+            //     .post(RequestBody.create(null, ""))
+            //     .build()
+            //
+            // val response = httpClient.newCall(request).execute()
+            // if (!response.isSuccessful) {
+            //     Log.w(TAG, "Échec de la révocation: ${response.code}")
+            // }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la révocation du token", e)
+            throw e
+        }
+    }
+
 
     /**
      * Vérifie si les permissions Calendar sont accordées

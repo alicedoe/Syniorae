@@ -61,6 +61,9 @@
     <string name="selected_calendar">Calendrier sélectionné</string>
     <string name="configure">Configurer</string>
     <string name="recovery_period">Période de récupération</string>
+    <string name="events_count">Nombre d\'événements</string>
+    <string name="sync_frequency">Fréquence de synchronisation</string>
+    <string name="icon_associations">Associations d\'icônes</string>
 
     <!-- Dialog confirmation -->
     <string name="disconnect_google_title">Déconnexion Google</string>

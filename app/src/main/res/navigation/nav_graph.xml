@@ -31,8 +31,16 @@
     <!-- Page 3 - Paramètres détaillés du calendrier -->
     <fragment
         android:id="@+id/calendarSettingsFragment"
-        android:name="com.syniorae.presentation.fragments.settings.CalendarSettingsFragment"
-        android:label="Calendar Settings" />
+        android:name="com.syniorae.presentation.fragments.calendar.settings.CalendarSettingsFragment"
+        android:label="Calendar Settings">
+
+        <action
+            android:id="@+id/action_calendarSettings_to_configuration"
+            app:destination="@id/configurationFragment"
+            app:popUpTo="@id/configurationFragment"
+            app:popUpToInclusive="false" />
+
+    </fragment>
 
     <!-- Ancien fragment de settings (à supprimer après migration) -->
     <fragment

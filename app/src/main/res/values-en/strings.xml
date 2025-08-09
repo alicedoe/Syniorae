@@ -54,7 +54,6 @@
     <string name="october">October</string>
     <string name="november">November</string>
     <string name="december">December</string>
-
     <!-- Calendar Settings -->
     <string name="calendar_settings_title">Calendar Settings</string>
     <string name="google_account">Google Account</string>
@@ -62,6 +61,9 @@
     <string name="selected_calendar">Selected Calendar</string>
     <string name="configure">Configure</string>
     <string name="recovery_period">Recovery Period</string>
+    <string name="events_count">Events Count</string>
+    <string name="sync_frequency">Sync Frequency</string>
+    <string name="icon_associations">Icon Associations</string>
 
     <!-- Dialog confirmation -->
     <string name="disconnect_google_title">Google Disconnection</string>
@@ -73,4 +75,5 @@
     <string name="events_max_format">%d events max</string>
     <string name="sync_frequency_format">Every %d hours</string>
     <string name="icon_associations_format">%d associations created</string>
+
 </resources>

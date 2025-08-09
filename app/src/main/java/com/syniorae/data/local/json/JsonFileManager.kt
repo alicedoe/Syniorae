@@ -163,4 +163,16 @@ class JsonFileManager(
             false
         }
     }
+
+    suspend fun fileExists(
+        widgetType: WidgetType,
+        fileType: JsonFileType
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val fileName = getFileName(widgetType, fileType)
+            storageManager.fileExists(fileName)
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

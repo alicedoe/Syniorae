@@ -1,28 +1,24 @@
-package com.syniorae.presentation.fragments.settings
+package com.syniorae.presentation.fragments.calendar.settings
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import android.widget.ArrayAdapter
+import android.widget.NumberPicker
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.syniorae.R
 import com.syniorae.databinding.FragmentCalendarSettingsBinding
-import com.syniorae.presentation.activities.CalendarConfigurationActivity
-import com.syniorae.presentation.fragments.calendar.settings.CalendarSettingsEvent
-import com.syniorae.presentation.fragments.calendar.settings.CalendarSettingsUiState
-import com.syniorae.presentation.fragments.calendar.settings.CalendarSettingsViewModel
-import com.syniorae.presentation.fragments.calendar.settings.CalendarSettingsViewModelFactory
 import kotlinx.coroutines.launch
 
 /**
  * Page 3 - Paramètres détaillés du widget Calendrier Google
- * Affiche toutes les configurations actuelles avec possibilité de les modifier
+ * Affiche toutes les configurations actuelles avec possibilité de les modifier via popups
  */
 class CalendarSettingsFragment : Fragment() {
 
@@ -60,35 +56,45 @@ class CalendarSettingsFragment : Fragment() {
     }
 
     private fun setupClickListeners() {
+        println("🔥 CalendarSettingsFragment.setupClickListeners() - DÉBUT")
+
         // Carte Calendrier sélectionné
         binding.calendarSelectionCard.setOnClickListener {
+            println("🔥 CalendarSettingsFragment - Carte calendrier cliquée")
             viewModel.editCalendarSelection()
         }
 
         // Carte Période de récupération
         binding.periodCard.setOnClickListener {
+            println("🔥 CalendarSettingsFragment - Carte période cliquée")
             viewModel.editPeriod()
         }
 
         // Carte Nombre d'événements
         binding.eventsCountCard.setOnClickListener {
+            println("🔥 CalendarSettingsFragment - Carte événements cliquée")
             viewModel.editEventsCount()
         }
 
         // Carte Fréquence de synchronisation
         binding.syncFrequencyCard.setOnClickListener {
+            println("🔥 CalendarSettingsFragment - Carte sync cliquée")
             viewModel.editSyncFrequency()
         }
 
         // Carte Associations d'icônes
         binding.iconAssociationsCard.setOnClickListener {
+            println("🔥 CalendarSettingsFragment - Carte icônes cliquée")
             viewModel.editIconAssociations()
         }
 
         // Bouton Déconnecter Google
         binding.disconnectButton.setOnClickListener {
+            println("🔥 CalendarSettingsFragment - Bouton DÉCONNEXION cliqué")
             viewModel.showDisconnectConfirmation()
         }
+
+        println("🔥 CalendarSettingsFragment.setupClickListeners() - FIN")
     }
 
     private fun observeViewModel() {
@@ -136,61 +142,210 @@ class CalendarSettingsFragment : Fragment() {
     }
 
     private fun handleEvent(event: CalendarSettingsEvent) {
+        println("🔥 CalendarSettingsFragment.handleEvent() - Event reçu: ${event::class.simpleName}")
+
         when (event) {
             is CalendarSettingsEvent.ShowDisconnectDialog -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowDisconnectDialog")
                 showDisconnectConfirmationDialog()
             }
-            is CalendarSettingsEvent.NavigateToStep -> {
-                navigateToConfigurationStep(event.step)
+            is CalendarSettingsEvent.ShowCalendarSelectionDialog -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowCalendarSelectionDialog")
+                showCalendarSelectionDialog()
+            }
+            is CalendarSettingsEvent.ShowPeriodDialog -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowPeriodDialog")
+                showPeriodDialog()
+            }
+            is CalendarSettingsEvent.ShowEventsCountDialog -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowEventsCountDialog")
+                showEventsCountDialog()
+            }
+            is CalendarSettingsEvent.ShowSyncFrequencyDialog -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowSyncFrequencyDialog")
+                showSyncFrequencyDialog()
+            }
+            is CalendarSettingsEvent.ShowIconAssociationsDialog -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowIconAssociationsDialog")
+                showIconAssociationsDialog()
             }
             is CalendarSettingsEvent.NavigateBack -> {
-                findNavController().navigateUp()
+                println("🔥 CalendarSettingsFragment.handleEvent() - NavigateBack")
+                // Option 1: Essayer l'action spécifique
+                try {
+                    findNavController().navigate(R.id.action_calendarSettings_to_configuration)
+                } catch (e: Exception) {
+                    println("🔥 Action spécifique échouée, utilisation navigateUp: ${e.message}")
+                    // Option 2: Si l'action n'existe pas, remonter jusqu'à la page 2
+                    findNavController().popBackStack(R.id.configurationFragment, false)
+                }
             }
             is CalendarSettingsEvent.ShowMessage -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowMessage: ${event.message}")
                 showMessage(event.message)
             }
             is CalendarSettingsEvent.ShowError -> {
+                println("🔥 CalendarSettingsFragment.handleEvent() - ShowError: ${event.message}")
                 showError(event.message)
             }
         }
     }
 
+    /**
+     * Popup de confirmation de déconnexion Google
+     */
     private fun showDisconnectConfirmationDialog() {
-        AlertDialog.Builder(requireContext())
+        println("🔥 CalendarSettingsFragment.showDisconnectConfirmationDialog() - DÉBUT")
+
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.disconnect_google_title)
             .setMessage(R.string.disconnect_google_message)
             .setPositiveButton(R.string.disconnect) { _, _ ->
-                viewModel.disconnectGoogle()
+                println("🔥 CalendarSettingsFragment.showDisconnectConfirmationDialog() - Bouton DÉCONNECTER cliqué")
+                viewModel.disconnectGoogle(requireContext())
             }
             .setNegativeButton(R.string.cancel) { dialog, _ ->
+                println("🔥 CalendarSettingsFragment.showDisconnectConfirmationDialog() - Bouton ANNULER cliqué")
+                dialog.dismiss()
+            }
+            .show()
+
+        println("🔥 CalendarSettingsFragment.showDisconnectConfirmationDialog() - Dialog affiché")
+    }
+
+    /**
+     * Popup de sélection de calendrier
+     * TODO: Récupérer la liste des calendriers disponibles via l'API Google
+     */
+    private fun showCalendarSelectionDialog() {
+        // Pour l'instant, popup d'information
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Sélection de calendrier")
+            .setMessage("Cette fonctionnalité sera implémentée dans une prochaine version.\n\nElle permettra de choisir parmi tous vos calendriers Google disponibles.")
+            .setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
     }
 
-    private fun navigateToConfigurationStep(step: Int) {
-        // Utiliser CalendarConfigurationActivity pour accéder aux étapes spécifiques
-        val intent = CalendarConfigurationActivity.newIntent(requireContext()).apply {
-            // Ajouter l'étape spécifique à lancer en extra
-            putExtra("start_step", step)
+    /**
+     * Popup de modification de la période de récupération
+     */
+    private fun showPeriodDialog() {
+        val currentWeeks = viewModel.uiState.value.weeksAhead
+
+        // Créer un NumberPicker
+        val numberPicker = NumberPicker(requireContext()).apply {
+            minValue = 1
+            maxValue = 52 // Maximum 1 an
+            value = currentWeeks
+            wrapSelectorWheel = false
         }
-        startActivity(intent)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Période de récupération")
+            .setMessage("Choisissez le nombre de semaines dans le futur :")
+            .setView(numberPicker)
+            .setPositiveButton("Valider") { _, _ ->
+                viewModel.updatePeriod(numberPicker.value)
+            }
+            .setNegativeButton("Annuler") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    /**
+     * Popup de modification du nombre d'événements
+     */
+    private fun showEventsCountDialog() {
+        val currentEvents = viewModel.uiState.value.maxEvents
+        val options = arrayOf("25", "50", "100", "150", "200")
+        val currentIndex = when (currentEvents) {
+            25 -> 0
+            50 -> 1
+            100 -> 2
+            150 -> 3
+            200 -> 4
+            else -> 1 // Par défaut 50
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Nombre d'événements maximum")
+            .setSingleChoiceItems(options, currentIndex) { dialog, which ->
+                val selectedEvents = options[which].toInt()
+                viewModel.updateEventsCount(selectedEvents)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Annuler") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    /**
+     * Popup de modification de la fréquence de synchronisation
+     */
+    private fun showSyncFrequencyDialog() {
+        val currentFrequency = viewModel.uiState.value.syncFrequencyHours
+        val options = arrayOf(
+            "Toutes les heures",
+            "Toutes les 2 heures",
+            "Toutes les 4 heures",
+            "Toutes les 8 heures",
+            "Une fois par jour"
+        )
+        val values = arrayOf(1, 2, 4, 8, 24)
+        val currentIndex = values.indexOf(currentFrequency).takeIf { it >= 0 } ?: 2
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Fréquence de synchronisation")
+            .setSingleChoiceItems(options, currentIndex) { dialog, which ->
+                val selectedFrequency = values[which]
+                viewModel.updateSyncFrequency(selectedFrequency)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Annuler") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    /**
+     * Popup de gestion des associations d'icônes
+     * TODO: Implémenter la gestion complète des associations
+     */
+    private fun showIconAssociationsDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Associations d'icônes")
+            .setMessage("Cette fonctionnalité sera implémentée dans une prochaine version.\n\nElle permettra d'associer des mots-clés à des icônes pour personnaliser l'affichage des événements.")
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun showMessage(message: String) {
-        ContextCompat.getMainExecutor(requireContext()).execute {
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        androidx.core.content.ContextCompat.getMainExecutor(requireContext()).execute {
+            android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showError(message: String) {
-        ContextCompat.getMainExecutor(requireContext()).execute {
-            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+        androidx.core.content.ContextCompat.getMainExecutor(requireContext()).execute {
+            android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        println("🔥 CalendarSettingsFragment.onResume() - Rechargement des données")
+        // Recharger les données à chaque fois qu'on revient sur cette page
+        viewModel.loadSettings()
     }
 }
