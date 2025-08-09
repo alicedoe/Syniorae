@@ -42,6 +42,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- OAuthCallbackActivity -->
         <activity
             android:name=".presentation.activities.OAuthCallbackActivity"
@@ -61,6 +67,13 @@
             android:exported="false"
             android:theme="@style/Theme.Syniorae"
             android:parentActivityName=".MainActivity" />
+
+        <service
+            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+            android:exported="true"
+            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+            android:visibleToInstantApps="true" />
+
 
         <!-- Service de synchronisation du calendrier -->
         <service

@@ -1,19 +1,25 @@
 package com.syniorae.presentation.fragments.calendar.configuration.steps
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import com.syniorae.databinding.FragmentStep1GoogleAuthBinding
 import com.syniorae.presentation.fragments.calendar.configuration.CalendarConfigurationViewModel
 import kotlinx.coroutines.launch
 
 /**
  * Étape 1 : Connexion Google et autorisations
- * Version complète avec gestion d'erreurs et feedback utilisateur
+ * Fragment corrigé pour gérer la vraie connexion Google avec popup
  */
 class Step1GoogleAuthFragment : Fragment() {
 
@@ -21,6 +27,20 @@ class Step1GoogleAuthFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val configViewModel: CalendarConfigurationViewModel by activityViewModels()
+
+    // ActivityResultLauncher pour gérer l'intent Google Sign-In
+    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Initialiser le launcher AVANT onCreateView
+        googleSignInLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            handleGoogleSignInResult(result.resultCode, result.data)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,17 +59,21 @@ class Step1GoogleAuthFragment : Fragment() {
     }
 
     private fun setupUI() {
+        // Configuration des textes
         binding.stepTitle.text = "Étape 1/6 - Connexion Google"
-        binding.stepDescription.text = "Connectez votre compte Google pour accéder à vos calendriers"
+        binding.stepDescription.text = "Connectez votre compte Google pour accéder à vos calendriers."
 
         // Bouton de connexion Google
         binding.connectGoogleButton.setOnClickListener {
             startGoogleAuthentication()
         }
 
-        // Bouton suivant
-        binding.nextButton.setOnClickListener {
-            configViewModel.nextStep()
+        // Bouton suivant (initialement désactivé)
+        binding.nextButton.apply {
+            isEnabled = false
+            setOnClickListener {
+                configViewModel.nextStep()
+            }
         }
 
         // Bouton annuler
@@ -81,7 +105,7 @@ class Step1GoogleAuthFragment : Fragment() {
             binding.nextButton.isEnabled = true
 
             // Afficher les permissions accordées
-            showPermissionsGranted()
+            showPermissionsInfo()
         } else {
             // Pas encore connecté
             binding.connectGoogleButton.visibility = View.VISIBLE
@@ -92,81 +116,148 @@ class Step1GoogleAuthFragment : Fragment() {
 
     private fun updateLoadingState(isLoading: Boolean) {
         binding.connectGoogleButton.isEnabled = !isLoading
-        binding.nextButton.isEnabled = !isLoading && configViewModel.configState.value.isGoogleConnected
+        binding.cancelButton.isEnabled = !isLoading
 
         if (isLoading) {
             binding.connectGoogleButton.text = "Connexion en cours..."
+            binding.progressBar.visibility = View.VISIBLE
         } else {
             binding.connectGoogleButton.text = "Se connecter avec Google"
+            binding.progressBar.visibility = View.GONE
         }
     }
 
+    /**
+     * MÉTHODE CORRIGÉE - Lance l'authentification Google avec popup
+     */
     private fun startGoogleAuthentication() {
         configViewModel.setLoading(true)
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                // Récupérer le gestionnaire d'authentification
                 val authManager = com.syniorae.core.di.DependencyInjection.getGoogleAuthManager()
 
-                // Tenter la connexion Google RÉELLE
-                when (val result = authManager.signIn()) {
+                // Vérifier si déjà connecté
+                if (authManager.isSignedIn()) {
+                    val email = authManager.getSignedInAccountEmail()
+                    if (!email.isNullOrBlank()) {
+                        configViewModel.setGoogleAccount(email)
+                        configViewModel.setLoading(false)
+                        showSuccess("Déjà connecté à Google !")
+                        return@launch
+                    }
+                }
+
+                // Obtenir l'intent de connexion Google
+                val result = authManager.signIn()
+
+                when (result) {
                     is com.syniorae.data.remote.google.GoogleAuthResult.Success -> {
                         if (result.userEmail == "pending") {
-                            // OAuth en cours, attendre le callback
-                            showInfo("Connexion en cours... Complétez l'authentification dans le navigateur.")
-                            configViewModel.setLoading(false)
-                        } else {
-                            // Connexion immédiate (token existant) ou callback réussi
-                            // Vérifier les permissions Calendar
-                            if (authManager.requestCalendarPermissions()) {
-                                configViewModel.setGoogleAccount(result.userEmail)
-                                showSuccess("Connexion Google réussie !")
+                            // Lancer l'intent Google Sign-In - CECI VA OUVRIR LE POPUP
+                            val signInIntent = authManager.getSignInIntent()
+                            if (signInIntent != null) {
+                                googleSignInLauncher.launch(signInIntent)
                             } else {
-                                showError("Les permissions d'accès au calendrier sont requises pour continuer.")
-                                authManager.signOut()
+                                configViewModel.setLoading(false)
+                                showError("Impossible de lancer l'authentification Google")
                             }
+                        } else {
+                            // Déjà connecté
+                            configViewModel.setGoogleAccount(result.userEmail)
+                            configViewModel.setLoading(false)
+                            showSuccess("Connexion Google réussie !")
                         }
                     }
                     is com.syniorae.data.remote.google.GoogleAuthResult.Error -> {
-                        showError("Erreur de connexion : ${result.message}")
+                        configViewModel.setLoading(false)
+                        showError("Erreur de connexion: ${result.message}")
                     }
                     is com.syniorae.data.remote.google.GoogleAuthResult.Cancelled -> {
-                        showError("Connexion annulée. Veuillez réessayer.")
+                        configViewModel.setLoading(false)
+                        showInfo("Connexion annulée")
                     }
                 }
+
             } catch (e: Exception) {
-                showError("Erreur inattendue : ${e.message}")
-            } finally {
-                // S'assurer que le loading est désactivé en cas d'erreur
-                if (configViewModel.configState.value.googleAccountEmail.isNullOrBlank()) {
-                    configViewModel.setLoading(false)
-                }
+                configViewModel.setLoading(false)
+                showError("Erreur inattendue: ${e.message}")
             }
         }
     }
 
-    private fun showPermissionsGranted() {
-        // TODO: Afficher la liste des permissions accordées
-        // Pour l'instant, juste un message de confirmation
+    /**
+     * NOUVELLE MÉTHODE - Traite le résultat du Google Sign-In
+     */
+    private fun handleGoogleSignInResult(resultCode: Int, data: Intent?) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("SYNIORAE_AUTH", "=== DEBUT handleGoogleSignInResult ===")
+                Log.d("SYNIORAE_AUTH", "resultCode = $resultCode")
+
+                // AJOUT : Même si c'est CANCELED, vérifions ce que Google nous dit
+                if (data != null) {
+                    Log.d("SYNIORAE_AUTH", "Intent data présent - Tentative d'analyse...")
+                    val authManager = com.syniorae.core.di.DependencyInjection.getGoogleAuthManager()
+                    val result = authManager.handleSignInResult(data)
+                    Log.d("SYNIORAE_AUTH", "Résultat malgré CANCELED: $result")
+
+                    when (result) {
+                        is com.syniorae.data.remote.google.GoogleAuthResult.Success -> {
+                            Log.d("SYNIORAE_AUTH", "SUCCESS malgré CANCELED: ${result.userEmail}")
+                            configViewModel.setGoogleAccount(result.userEmail)
+                            showSuccess("Connexion Google réussie !")
+                            configViewModel.setLoading(false)
+                            return@launch
+                        }
+                        is com.syniorae.data.remote.google.GoogleAuthResult.Error -> {
+                            Log.d("SYNIORAE_AUTH", "ERROR: ${result.message}")
+                            showError("Erreur de connexion: ${result.message}")
+                        }
+                        is com.syniorae.data.remote.google.GoogleAuthResult.Cancelled -> {
+                            Log.d("SYNIORAE_AUTH", "CANCELLED confirmé")
+                            showInfo("Connexion annulée par l'utilisateur")
+                        }
+                    }
+                }
+
+                if (resultCode == Activity.RESULT_OK) {
+                    // Code normal...
+                } else {
+                    Log.d("SYNIORAE_AUTH", "ResultCode CANCELED mais on a essayé quand même")
+                    showInfo("Connexion annulée - resultCode: $resultCode")
+                }
+
+                configViewModel.setLoading(false)
+
+            } catch (e: Exception) {
+                Log.e("SYNIORAE_AUTH", "EXCEPTION: ${e.message}", e)
+                configViewModel.setLoading(false)
+                showError("Erreur lors du traitement: ${e.message}")
+            }
+        }
     }
 
-    // Méthodes d'affichage des messages
-    private fun showInfo(message: String) {
-        context?.let { ctx ->
-            android.widget.Toast.makeText(ctx, message, android.widget.Toast.LENGTH_SHORT).show()
-        }
+    private fun showPermissionsInfo() {
+        binding.permissionsInfo.visibility = View.VISIBLE
+        binding.permissionsInfo.text = "✓ Accès aux calendriers accordé\n✓ Lecture seule des événements"
     }
 
     private fun showSuccess(message: String) {
-        context?.let { ctx ->
-            android.widget.Toast.makeText(ctx, message, android.widget.Toast.LENGTH_SHORT).show()
-        }
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setBackgroundTint(resources.getColor(android.R.color.holo_green_dark, null))
+            .show()
     }
 
     private fun showError(message: String) {
-        context?.let { ctx ->
-            android.widget.Toast.makeText(ctx, message, android.widget.Toast.LENGTH_LONG).show()
-        }
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setBackgroundTint(resources.getColor(android.R.color.holo_red_dark, null))
+            .show()
+    }
+
+    private fun showInfo(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {

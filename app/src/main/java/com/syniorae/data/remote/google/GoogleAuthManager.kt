@@ -12,12 +12,10 @@ import com.google.android.gms.common.api.Scope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
 
 /**
- * Manager pour l'authentification Google RÉELLE
- * Utilise Google Sign-In SDK
+ * Manager pour l'authentification Google
+ * Utilise Google Sign-In SDK avec permissions Calendar
  */
 class GoogleAuthManager(private val context: Context) {
 
@@ -26,12 +24,11 @@ class GoogleAuthManager(private val context: Context) {
         const val RC_SIGN_IN = 9001
     }
 
-    // Client Google Sign-In
+    // Client Google Sign-In configuré avec les scopes Calendar
     private val googleSignInClient: GoogleSignInClient by lazy {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestProfile()
-            .requestServerAuthCode(getClientId()) // Pour obtenir le code d'autorisation
             .requestScopes(
                 Scope("https://www.googleapis.com/auth/calendar.readonly"),
                 Scope("https://www.googleapis.com/auth/calendar.events.readonly")
@@ -65,7 +62,6 @@ class GoogleAuthManager(private val context: Context) {
     private fun checkExistingSignIn() {
         val account = GoogleSignIn.getLastSignedInAccount(context)
         if (account != null && tokenManager.hasValidTokens()) {
-            // Utilisateur déjà connecté avec tokens valides
             updateAuthState(account)
         }
     }
@@ -85,7 +81,7 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     /**
-     * Lance le processus d'authentification RÉEL
+     * Lance le processus d'authentification Google
      */
     suspend fun signIn(): GoogleAuthResult {
         return try {
@@ -101,9 +97,6 @@ class GoogleAuthManager(private val context: Context) {
 
             // Lancer l'authentification
             val signInIntent = googleSignInClient.signInIntent
-
-            // Retourner "pending" pour indiquer que l'Intent va se lancer
-            // L'activité appelante doit gérer startActivityForResult
             _pendingSignInIntent = signInIntent
             GoogleAuthResult.Success("pending")
 
@@ -133,16 +126,13 @@ class GoogleAuthManager(private val context: Context) {
 
             Log.d(TAG, "Authentification réussie: ${account?.email}")
 
-            // Sauvegarder les informations de base du compte
-            // Note: Le token Google Sign-In est différent des tokens OAuth API
-            // Pour l'API Calendar, nous devrons faire un échange séparé
+            // Mettre à jour l'état et sauvegarder les tokens
             updateAuthState(account)
 
-            // Sauvegarder les informations de base
             account?.email?.let { email ->
                 tokenManager.saveTokens(
                     accessToken = "gsi_token_${System.currentTimeMillis()}", // Token temporaire
-                    refreshToken = "", // Sera obtenu via OAuth flow
+                    refreshToken = "", // Sera obtenu via OAuth flow si nécessaire
                     expiresInSeconds = 3600,
                     userEmail = email,
                     grantedScopes = requiredScopes
@@ -156,12 +146,21 @@ class GoogleAuthManager(private val context: Context) {
             when (e.statusCode) {
                 12501 -> GoogleAuthResult.Cancelled // Utilisateur a annulé
                 7 -> GoogleAuthResult.Error("Pas de connexion réseau")
+                10 -> GoogleAuthResult.Error("Configuration Google incorrecte")
                 else -> GoogleAuthResult.Error("Erreur d'authentification: ${e.localizedMessage}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erreur inattendue lors de l'authentification", e)
             GoogleAuthResult.Error("Erreur inattendue: ${e.message}")
         }
+    }
+
+    suspend fun handleOAuthCallback(authorizationCode: String, state: String): GoogleAuthResult {
+        Log.d(TAG, "OAuth callback reçu - non implémenté dans cette version")
+        return GoogleAuthResult.Error("OAuth callback non supporté avec Google Sign-In")
+    }
+    suspend fun requestCalendarPermissions(): Boolean {
+        return hasCalendarPermissions()
     }
 
     /**
@@ -194,55 +193,6 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     /**
-     * Traite le callback OAuth reçu de l'activité de callback
-     */
-    suspend fun handleOAuthCallback(authorizationCode: String, state: String): GoogleAuthResult {
-        return try {
-            Log.d(TAG, "Traitement du callback OAuth avec code: ${authorizationCode.take(10)}...")
-
-            // Vérifier le state pour la sécurité (CSRF protection)
-            if (!isValidState(state)) {
-                return GoogleAuthResult.Error("State invalide - possible attaque CSRF")
-            }
-
-            // Pour l'instant, simuler l'échange des tokens
-            // TODO: Implémenter l'échange réel code -> tokens
-            val success = true // Simulation
-
-            if (success) {
-                val userEmail = tokenManager.getUserEmail() ?: "unknown@gmail.com"
-
-                // Mettre à jour l'état d'authentification
-                _authState.value = GoogleAuthState(
-                    isSignedIn = true,
-                    userEmail = userEmail,
-                    accessToken = tokenManager.getAccessToken(),
-                    refreshToken = tokenManager.getRefreshToken(),
-                    hasCalendarPermission = tokenManager.hasCalendarScopes(),
-                    lastSignInTime = System.currentTimeMillis()
-                )
-
-                Log.i(TAG, "Authentification OAuth réussie pour: $userEmail")
-                GoogleAuthResult.Success(userEmail)
-            } else {
-                GoogleAuthResult.Error("Échec de l'échange des tokens")
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors du traitement du callback OAuth", e)
-            GoogleAuthResult.Error("Erreur lors de l'authentification: ${e.message}")
-        }
-    }
-
-    /**
-     * Vérifie la validité du paramètre state (sécurité CSRF)
-     */
-    private fun isValidState(state: String): Boolean {
-        // TODO: Implémenter la vraie vérification du state avec stockage sécurisé
-        return state.isNotBlank()
-    }
-
-    /**
      * Déconnecte l'utilisateur
      */
     suspend fun signOut(): Boolean {
@@ -268,31 +218,10 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     /**
-     * Vérifie et demande les permissions Calendar
+     * Vérifie si les permissions Calendar sont accordées
      */
-    suspend fun requestCalendarPermissions(): Boolean {
-        return try {
-            val account = GoogleSignIn.getLastSignedInAccount(context)
-            if (account == null) {
-                Log.w(TAG, "Aucun compte connecté pour demander les permissions")
-                return false
-            }
-
-            val hasPermissions = hasRequiredScopes(account)
-            if (hasPermissions) {
-                Log.d(TAG, "Permissions Calendar déjà accordées")
-                _authState.value = _authState.value.copy(hasCalendarPermission = true)
-                return true
-            } else {
-                Log.d(TAG, "Permissions Calendar manquantes - relancer l'authentification")
-                // Les permissions seront demandées lors de la prochaine authentification
-                return false
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de la vérification des permissions", e)
-            false
-        }
+    fun hasCalendarPermissions(): Boolean {
+        return _authState.value.hasCalendarPermission
     }
 
     /**
@@ -313,18 +242,11 @@ class GoogleAuthManager(private val context: Context) {
      * Rafraîchit le token d'accès
      */
     suspend fun refreshToken(): Boolean {
-        return tokenManager.refreshToken() // Utilise la méthode existante
+        return tokenManager.refreshToken()
     }
 
     /**
-     * Vérifie si les permissions Calendar sont accordées
-     */
-    fun hasCalendarPermissions(): Boolean {
-        return _authState.value.hasCalendarPermission
-    }
-
-    /**
-     * Obtient le Client ID depuis les ressources
+     * Obtient le Client ID depuis les ressources XML
      */
     private fun getClientId(): String {
         return try {
@@ -332,8 +254,9 @@ class GoogleAuthManager(private val context: Context) {
                 "google_oauth_client_id", "string", context.packageName
             ))
         } catch (e: Exception) {
-            Log.e(TAG, "Impossible de charger le Client ID", e)
-            "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com" // Fallback
+            Log.e(TAG, "Impossible de charger le Client ID depuis les ressources", e)
+            // Fallback vers l'ancien Client ID en cas d'échec
+            "988967002768-fks9sco2sqrh3bg3opvf1ln4km8grecd.apps.googleusercontent.com"
         }
     }
 }

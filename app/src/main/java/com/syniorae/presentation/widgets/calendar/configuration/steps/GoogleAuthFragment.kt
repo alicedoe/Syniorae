@@ -9,8 +9,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
+import com.syniorae.data.remote.google.GoogleAuthState
 import com.syniorae.databinding.FragmentStep1GoogleAuthBinding
 import com.syniorae.presentation.fragments.calendar.configuration.CalendarConfigurationViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -21,6 +25,9 @@ class Step1GoogleAuthFragment : Fragment() {
 
     private var _binding: FragmentStep1GoogleAuthBinding? = null
     private val binding get() = _binding!!
+
+    private val _authState = MutableStateFlow(GoogleAuthState())
+    val authState: StateFlow<GoogleAuthState> = _authState.asStateFlow()
 
     private val configViewModel: CalendarConfigurationViewModel by activityViewModels()
 
@@ -108,6 +115,39 @@ class Step1GoogleAuthFragment : Fragment() {
             binding.progressBar.visibility = View.GONE
         }
     }
+    suspend fun requestCalendarPermissions(): Boolean {
+        return hasCalendarPermissions()
+    }
+
+    fun hasCalendarPermissions(): Boolean {
+        return _authState.value.hasCalendarPermission
+    }
+
+    private fun showPermissionsInfo() {
+        binding.permissionsInfo.visibility = View.VISIBLE
+        binding.permissionsInfo.text = "✓ Accès aux calendriers accordé\n✓ Lecture seule des événements"
+    }
+
+    private fun showSuccess(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setBackgroundTint(resources.getColor(android.R.color.holo_green_light, null))
+            .show()
+    }
+
+    private fun showError(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setBackgroundTint(resources.getColor(android.R.color.holo_red_light, null))
+            .show()
+    }
+
+    private fun showInfo(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 
     private fun handleGoogleConnection() {
         configViewModel.setLoading(true)
@@ -144,31 +184,5 @@ class Step1GoogleAuthFragment : Fragment() {
                 configViewModel.setLoading(false)
             }
         }
-    }
-
-    private fun showPermissionsInfo() {
-        binding.permissionsInfo.visibility = View.VISIBLE
-        binding.permissionsInfo.text = "✓ Accès aux calendriers accordé\n✓ Lecture seule des événements"
-    }
-
-    private fun showSuccess(message: String) {
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
-            .setBackgroundTint(resources.getColor(android.R.color.holo_green_light, null))
-            .show()
-    }
-
-    private fun showError(message: String) {
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
-            .setBackgroundTint(resources.getColor(android.R.color.holo_red_light, null))
-            .show()
-    }
-
-    private fun showInfo(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

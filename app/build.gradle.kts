@@ -40,6 +40,14 @@ android {
         viewBinding = true
         buildConfig = true
     }
+
+    // Configuration pour éviter les conflits META-INF
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/DEPENDENCIES"
+        }
+    }
 }
 
 dependencies {
@@ -62,9 +70,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Google Play Services (versions compatibles)
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
-    implementation("com.google.android.gms:play-services-base:18.3.0")
+    // Google Play Services - Versions corrigées
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.android.gms:play-services-base:18.2.0")
 
     // HTTP Client pour les appels API
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -81,11 +89,20 @@ dependencies {
     // SwipeRefreshLayout
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
-    // ========= DÉPENDANCES AJOUTÉES POUR CORRIGER LES ERREURS =========
-
     // WorkManager pour la synchronisation en arrière-plan
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Security pour le stockage sécurisé des tokens OAuth
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Google Calendar API - Avec exclusions pour éviter les conflits
+    implementation("com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0") {
+        exclude(group = "org.apache.httpcomponents", module = "httpclient")
+    }
+    implementation("com.google.api-client:google-api-client-android:2.0.0") {
+        exclude(group = "org.apache.httpcomponents", module = "httpclient")
+    }
+    implementation("com.google.http-client:google-http-client-gson:1.43.3") {
+        exclude(group = "org.apache.httpcomponents", module = "httpclient")
+    }
 }

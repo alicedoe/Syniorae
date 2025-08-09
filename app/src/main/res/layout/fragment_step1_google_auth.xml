@@ -37,83 +37,78 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stepTitle" />
 
-    <!-- Contenu principal -->
+    <!-- Bouton de connexion Google -->
+    <Button
+        android:id="@+id/connectGoogleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Se connecter avec Google"
+        android:textSize="@dimen/text_size_medium"
+        android:padding="@dimen/padding_medium"
+        android:minWidth="280dp"
+        android:minHeight="@dimen/touch_target_large"
+        android:layout_marginTop="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stepDescription" />
+
+    <!-- Barre de progression -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/connectGoogleButton"
+        tools:visibility="visible" />
+
+    <!-- Informations du compte connecté -->
     <LinearLayout
-        android:id="@+id/mainContent"
+        android:id="@+id/connectedAccountInfo"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center"
-        android:layout_marginTop="48dp"
+        android:background="@drawable/rounded_background_success"
+        android:padding="16dp"
+        android:layout_marginTop="24dp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/stepDescription">
+        app:layout_constraintTop_toBottomOf="@id/progressBar"
+        tools:visibility="visible">
 
-        <!-- Bouton de connexion Google -->
-        <Button
-            android:id="@+id/connectGoogleButton"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Se connecter avec Google"
+            android:text="✓ Connecté avec succès"
             android:textSize="@dimen/text_size_medium"
-            android:padding="@dimen/padding_medium"
-            android:minWidth="280dp"
-            android:minHeight="@dimen/touch_target_large"
-            android:layout_marginBottom="24dp" />
+            android:textColor="@color/success_dark"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
-        <!-- Barre de progression -->
-        <ProgressBar
-            android:id="@+id/progressBar"
+        <TextView
+            android:id="@+id/connectedAccountEmail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:textSize="@dimen/text_size_medium"
+            android:textColor="@color/success_dark"
+            android:layout_marginBottom="8dp"
+            tools:text="utilisateur@gmail.com" />
 
-        <!-- Informations du compte connecté -->
-        <LinearLayout
-            android:id="@+id/connectedAccountInfo"
-            android:layout_width="match_parent"
+        <!-- Informations sur les permissions -->
+        <TextView
+            android:id="@+id/permissionsInfo"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:textSize="12sp"
+            android:textColor="@color/success_dark"
             android:gravity="center"
-            android:background="@drawable/rounded_background_success"
-            android:padding="16dp"
-            android:layout_marginTop="16dp"
             android:visibility="gone"
-            tools:visibility="visible">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="✓ Connecté avec succès"
-                android:textSize="@dimen/text_size_medium"
-                android:textColor="@color/success_dark"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:id="@+id/connectedAccountEmail"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/text_size_medium"
-                android:textColor="@color/success_dark"
-                android:layout_marginBottom="8dp"
-                tools:text="utilisateur@gmail.com" />
-
-            <!-- Informations sur les permissions -->
-            <TextView
-                android:id="@+id/permissionsInfo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="@color/success_dark"
-                android:gravity="center"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="✓ Accès aux calendriers accordé\n✓ Lecture seule des événements" />
-
-        </LinearLayout>
+            tools:visibility="visible"
+            tools:text="✓ Accès aux calendriers accordé\n✓ Lecture seule des événements" />
 
     </LinearLayout>
 
@@ -128,7 +123,7 @@
         android:layout_marginTop="32dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mainContent">
+        app:layout_constraintTop_toBottomOf="@id/connectedAccountInfo">
 
         <TextView
             android:layout_width="wrap_content"

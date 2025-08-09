@@ -127,6 +127,7 @@ object DependencyInjection {
 
     fun getGoogleAuthManager(): com.syniorae.data.remote.google.GoogleAuthManager {
         if (_googleAuthManager == null) {
+            // CORRECTION: Passer le context au constructeur
             _googleAuthManager = com.syniorae.data.remote.google.GoogleAuthManager(requireContext())
         }
         return _googleAuthManager!!
