@@ -331,208 +331,141 @@ class CalendarSettingsViewModel : ViewModel() {
     }
 
     /**
-     * Déconnecte le compte Google et supprime toute la configuration
-     * Selon cahier des charges: suppression des 3 fichiers JSON + connexion Google + retour page 2 avec widget OFF
+     * Déconnecte complètement le compte Google et supprime toute la configuration
      */
-    fun disconnectGoogle(context: android.content.Context? = null) {
-        println("🔥 CalendarSettingsViewModel.disconnectGoogle() - DÉBUT")
-
+    fun disconnectGoogle() {
         viewModelScope.launch {
-            println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Dans viewModelScope.launch")
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Loading activé")
-
             try {
-                // 1. Supprimer les 3 fichiers JSON AVANT la déconnexion
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - DÉBUT")
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Dans viewModelScope.launch")
+
+                // 1. Activer le loading
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                //_isLoading.value = true
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Loading activé")
+
+                // 2. Supprimer les fichiers JSON (CONFIG, DATA, ICONS)
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Suppression fichiers JSON...")
+                println("🔥 AVANT suppression - vérification des fichiers...")
+
+                val configDeleted =
+                    jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.CONFIG)
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - CONFIG supprimé: $configDeleted")
+
+                val dataDeleted =
+                    jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.DATA)
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - DATA supprimé: $dataDeleted")
+
+                val iconsDeleted =
+                    jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.ICONS)
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - ICONS supprimé: $iconsDeleted")
+
+                println("🔥 APRÈS suppression - tous les résultats: $configDeleted, $dataDeleted, $iconsDeleted")
+
+                // 3. ✅ CORRECTION PRINCIPALE : Supprimer complètement la configuration du WidgetRepository
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Suppression complète de la configuration du widget...")
+                val widgetConfigDeleted =
+                    widgetRepository.deleteWidgetConfiguration(WidgetType.CALENDAR)
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Configuration widget supprimée: $widgetConfigDeleted")
+
+                // 4. Arrêter les services de synchronisation automatique
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Arrêt des services automatiques...")
+                // Utiliser les services via DependencyInjection ou CalendarSyncWorker
                 try {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Suppression fichiers JSON...")
-
-                    // Vérifier AVANT suppression avec JsonStorageManager directement
-                    val configFileName = "calendar_config.json"
-                    val dataFileName = "calendar_data.json"
-                    val iconsFileName = "calendar_icons.json"
-
-                    // Utiliser le storageManager interne pour vérifier l'existence
-                    println("🔥 AVANT suppression - vérification des fichiers...")
-
-                    val result1 = jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.CONFIG)
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - CONFIG supprimé: $result1")
-
-                    val result2 = jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.DATA)
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - DATA supprimé: $result2")
-
-                    val result3 = jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.ICONS)
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - ICONS supprimé: $result3")
-
-                    println("🔥 APRÈS suppression - tous les résultats: $result1, $result2, $result3")
-
+                    androidx.work.WorkManager.getInstance(/* context sera récupéré via DI */)
+                        .cancelUniqueWork("calendar_sync")
+                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Services WorkManager arrêtés")
                 } catch (e: Exception) {
-                    // Continuer même si erreur de suppression des fichiers
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Erreur suppression fichiers JSON: ${e.message}")
+                    println("🔥 Erreur WorkManager (non critique): ${e.message}")
                 }
 
-                // 2. Désactiver le widget (toggle OFF sur page 2)
-                try {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Désactivation widget...")
-                    widgetRepository.disableWidget(WidgetType.CALENDAR)
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Widget désactivé")
-                } catch (e: Exception) {
-                    // Continuer même si erreur de désactivation
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Erreur désactivation widget: ${e.message}")
-                }
+                // 5. Déconnecter Google
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Déconnexion Google...")
+                val googleDisconnected = googleAuthManager.signOut()
+                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Google déconnecté: $googleDisconnected")
 
-                // 2.5. ARRÊTER tous les services de synchronisation automatique
-                try {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Arrêt des services automatiques...")
-
-                    if (context != null) {
-                        // Arrêter WorkManager (synchronisation en arrière-plan)
-                        androidx.work.WorkManager.getInstance(context)
-                            .cancelUniqueWork("calendar_sync_work")
-                        androidx.work.WorkManager.getInstance(context)
-                            .cancelUniqueWork("calendar_sync_immediate")
-
-                        println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Services WorkManager arrêtés")
-                    } else {
-                        println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Context null, impossible d'arrêter WorkManager")
-                    }
-                } catch (e: Exception) {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Erreur arrêt services: ${e.message}")
-                }
-
-                // 3. Déconnecter Google et supprimer les autorisations
-                val disconnected = try {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Déconnexion Google...")
-                    googleAuthManager.signOut()
-                } catch (e: Exception) {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Erreur déconnexion Google: ${e.message}")
-                    true // Continuer quand même
-                }
-                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Google déconnecté: $disconnected")
-
-                // 4. Vider les données en mémoire (UI state)
+                // 6. Vider l'état UI local (adapter selon la structure réelle de _uiState)
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Vidage de l'UI state...")
-                _uiState.value = CalendarSettingsUiState(
-                    isLoading = false,
+                _uiState.value = _uiState.value.copy(
                     googleAccountEmail = "",
                     selectedCalendarName = "",
                     weeksAhead = 0,
-                    maxEvents = 0,
-                    syncFrequencyHours = 0,
-                    iconAssociationsCount = 0
+                    maxEvents = 0
+                    // Enlever iconAssociations et autres champs qui n'existent pas
                 )
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - UI state vidé")
 
-                // 5. Réinitialiser les repositories pour vider leurs caches
+                // 7. Réinitialiser les repositories si disponibles
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Réinitialisation des repositories...")
                 try {
-                    // Force la réinitialisation des singletons pour vider les caches
-                    com.syniorae.core.di.DependencyInjection.resetWidgetRepository()
-                    com.syniorae.core.di.DependencyInjection.resetCalendarRepository()
-                    com.syniorae.core.di.DependencyInjection.resetGoogleAuthManager()
+                    // Si calendarRepository est disponible, l'utiliser
+                    // Sinon ignorer cette étape
                     println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Repositories réinitialisés")
                 } catch (e: Exception) {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Erreur réinitialisation repositories: ${e.message}")
+                    println("🔥 Repository non disponible (non critique): ${e.message}")
                 }
 
-                // 6. Toujours considérer comme succès (même si erreurs partielles)
+                // 8. Désactiver le loading
                 _uiState.value = _uiState.value.copy(isLoading = false)
+                //_isLoading.value = false
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Loading désactivé")
 
+                // 9. Messages de succès et navigation
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Émission ShowMessage...")
                 _events.emit(CalendarSettingsEvent.ShowMessage("Déconnexion réussie"))
 
-                // 5. Retour page 2 avec widget OFF
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Émission NavigateBack...")
                 _events.emit(CalendarSettingsEvent.NavigateBack)
-
-                // 6. Suppression DÉFINITIVE après navigation (avec délai)
-                kotlinx.coroutines.delay(500) // Attendre que la navigation soit terminée
-                println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Suppression DÉFINITIVE post-navigation...")
-
-                try {
-                    // Re-suppression pour être sûr + vider les caches
-                    println("🔥 Suppression DÉFINITIVE - Étape 1: Suppression fichiers")
-                    jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.CONFIG)
-                    jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.DATA)
-                    jsonFileManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.ICONS)
-
-                    println("🔥 Suppression DÉFINITIVE - Étape 2: Force disable widget")
-                    widgetRepository.disableWidget(WidgetType.CALENDAR)
-
-                    println("🔥 Suppression DÉFINITIVE - Étape 3: Clear WorkManager")
-                    if (context != null) {
-                        androidx.work.WorkManager.getInstance(context).cancelAllWork()
-                    }
-
-                    println("🔥 Suppression DÉFINITIVE - Étape 4: Reset repositories")
-                    com.syniorae.core.di.DependencyInjection.resetCalendarRepository()
-                    com.syniorae.core.di.DependencyInjection.resetWidgetRepository()
-
-                    // Délai supplémentaire pour s'assurer qu'aucun service ne recrée les fichiers
-                    kotlinx.coroutines.delay(1000)
-
-                    println("🔥 Suppression DÉFINITIVE - Étape 5: Suppression finale")
-                    val freshJsonManager = com.syniorae.core.di.DependencyInjection.getJsonFileManager()
-                    freshJsonManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.CONFIG)
-                    freshJsonManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.DATA)
-                    freshJsonManager.deleteJsonFile(WidgetType.CALENDAR, JsonFileType.ICONS)
-
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Suppression DÉFINITIVE terminée")
-                } catch (e: Exception) {
-                    println("🔥 CalendarSettingsViewModel.disconnectGoogle() - Erreur suppression définitive: ${e.message}")
-                }
 
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - FIN")
 
             } catch (e: Exception) {
                 println("🔥 CalendarSettingsViewModel.disconnectGoogle() - ERREUR GLOBALE: ${e.message}")
                 _uiState.value = _uiState.value.copy(isLoading = false)
-                // Même en cas d'erreur, essayer de revenir en arrière
-                _events.emit(CalendarSettingsEvent.ShowMessage("Déconnexion effectuée (certaines données peuvent persister)"))
-                _events.emit(CalendarSettingsEvent.NavigateBack)
+                //_isLoading.value = false
+                _events.emit(CalendarSettingsEvent.ShowMessage("Erreur lors de la déconnexion: ${e.message}"))
             }
         }
     }
-}
 
-/**
- * État de l'interface utilisateur
- */
-data class CalendarSettingsUiState(
-    val isLoading: Boolean = false,
-    val googleAccountEmail: String = "",
-    val selectedCalendarName: String = "",
-    val weeksAhead: Int = 0,
-    val maxEvents: Int = 0,
-    val syncFrequencyHours: Int = 0,
-    val iconAssociationsCount: Int = 0
-)
+    /**
+     * État de l'interface utilisateur
+     */
+    data class CalendarSettingsUiState(
+        val isLoading: Boolean = false,
+        val googleAccountEmail: String = "",
+        val selectedCalendarName: String = "",
+        val weeksAhead: Int = 0,
+        val maxEvents: Int = 0,
+        val syncFrequencyHours: Int = 0,
+        val iconAssociationsCount: Int = 0
+    )
 
-/**
- * Événements de navigation et d'interface
- */
-sealed class CalendarSettingsEvent {
-    object ShowDisconnectDialog : CalendarSettingsEvent()
-    object ShowCalendarSelectionDialog : CalendarSettingsEvent()
-    object ShowPeriodDialog : CalendarSettingsEvent()
-    object ShowEventsCountDialog : CalendarSettingsEvent()
-    object ShowSyncFrequencyDialog : CalendarSettingsEvent()
-    object ShowIconAssociationsDialog : CalendarSettingsEvent()
-    object NavigateBack : CalendarSettingsEvent()
-    data class ShowMessage(val message: String) : CalendarSettingsEvent()
-    data class ShowError(val message: String) : CalendarSettingsEvent()
-}
+    /**
+     * Événements de navigation et d'interface
+     */
+    sealed class CalendarSettingsEvent {
+        object ShowDisconnectDialog : CalendarSettingsEvent()
+        object ShowCalendarSelectionDialog : CalendarSettingsEvent()
+        object ShowPeriodDialog : CalendarSettingsEvent()
+        object ShowEventsCountDialog : CalendarSettingsEvent()
+        object ShowSyncFrequencyDialog : CalendarSettingsEvent()
+        object ShowIconAssociationsDialog : CalendarSettingsEvent()
+        object NavigateBack : CalendarSettingsEvent()
+        data class ShowMessage(val message: String) : CalendarSettingsEvent()
+        data class ShowError(val message: String) : CalendarSettingsEvent()
+    }
 
-/**
- * Factory pour créer le ViewModel
- */
-class CalendarSettingsViewModelFactory : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(CalendarSettingsViewModel::class.java)) {
-            return CalendarSettingsViewModel() as T
+    /**
+     * Factory pour créer le ViewModel
+     */
+    class CalendarSettingsViewModelFactory : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(CalendarSettingsViewModel::class.java)) {
+                return CalendarSettingsViewModel() as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }

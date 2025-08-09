@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.NumberPicker
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -26,7 +24,7 @@ class CalendarSettingsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: CalendarSettingsViewModel by viewModels {
-        CalendarSettingsViewModelFactory()
+        CalendarSettingsViewModel.CalendarSettingsViewModelFactory()
     }
 
     override fun onCreateView(
@@ -111,7 +109,7 @@ class CalendarSettingsFragment : Fragment() {
         }
     }
 
-    private fun updateUI(state: CalendarSettingsUiState) {
+    private fun updateUI(state: CalendarSettingsViewModel.CalendarSettingsUiState) {
         // Carte Compte Google
         binding.googleAccountEmail.text = state.googleAccountEmail
         binding.googleAccountCard.visibility = if (state.googleAccountEmail.isNotEmpty()) View.VISIBLE else View.GONE
@@ -121,6 +119,8 @@ class CalendarSettingsFragment : Fragment() {
         binding.calendarSelectionCard.visibility = if (state.selectedCalendarName.isNotEmpty()) View.VISIBLE else View.GONE
 
         // Carte Période de récupération
+        println("🔥 CalendarSettingsFragment - state.weeksAhead : ${state.weeksAhead}")
+
         binding.periodText.text = getString(R.string.period_weeks_format, state.weeksAhead)
         binding.periodCard.visibility = if (state.weeksAhead > 0) View.VISIBLE else View.GONE
 
@@ -141,35 +141,35 @@ class CalendarSettingsFragment : Fragment() {
         binding.settingsContainer.visibility = if (state.isLoading) View.GONE else View.VISIBLE
     }
 
-    private fun handleEvent(event: CalendarSettingsEvent) {
+    private fun handleEvent(event: CalendarSettingsViewModel.CalendarSettingsEvent) {
         println("🔥 CalendarSettingsFragment.handleEvent() - Event reçu: ${event::class.simpleName}")
 
         when (event) {
-            is CalendarSettingsEvent.ShowDisconnectDialog -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowDisconnectDialog -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowDisconnectDialog")
                 showDisconnectConfirmationDialog()
             }
-            is CalendarSettingsEvent.ShowCalendarSelectionDialog -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowCalendarSelectionDialog -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowCalendarSelectionDialog")
                 showCalendarSelectionDialog()
             }
-            is CalendarSettingsEvent.ShowPeriodDialog -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowPeriodDialog -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowPeriodDialog")
                 showPeriodDialog()
             }
-            is CalendarSettingsEvent.ShowEventsCountDialog -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowEventsCountDialog -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowEventsCountDialog")
                 showEventsCountDialog()
             }
-            is CalendarSettingsEvent.ShowSyncFrequencyDialog -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowSyncFrequencyDialog -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowSyncFrequencyDialog")
                 showSyncFrequencyDialog()
             }
-            is CalendarSettingsEvent.ShowIconAssociationsDialog -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowIconAssociationsDialog -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowIconAssociationsDialog")
                 showIconAssociationsDialog()
             }
-            is CalendarSettingsEvent.NavigateBack -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.NavigateBack -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - NavigateBack")
                 // Option 1: Essayer l'action spécifique
                 try {
@@ -180,11 +180,11 @@ class CalendarSettingsFragment : Fragment() {
                     findNavController().popBackStack(R.id.configurationFragment, false)
                 }
             }
-            is CalendarSettingsEvent.ShowMessage -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowMessage -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowMessage: ${event.message}")
                 showMessage(event.message)
             }
-            is CalendarSettingsEvent.ShowError -> {
+            is CalendarSettingsViewModel.CalendarSettingsEvent.ShowError -> {
                 println("🔥 CalendarSettingsFragment.handleEvent() - ShowError: ${event.message}")
                 showError(event.message)
             }
@@ -202,7 +202,7 @@ class CalendarSettingsFragment : Fragment() {
             .setMessage(R.string.disconnect_google_message)
             .setPositiveButton(R.string.disconnect) { _, _ ->
                 println("🔥 CalendarSettingsFragment.showDisconnectConfirmationDialog() - Bouton DÉCONNECTER cliqué")
-                viewModel.disconnectGoogle(requireContext())
+                viewModel.disconnectGoogle()
             }
             .setNegativeButton(R.string.cancel) { dialog, _ ->
                 println("🔥 CalendarSettingsFragment.showDisconnectConfirmationDialog() - Bouton ANNULER cliqué")
